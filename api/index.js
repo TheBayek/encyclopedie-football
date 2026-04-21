@@ -11,16 +11,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database connection
-const MONGODB_URI = process.env.MONGODB_URI;
+// Middleware Serverless pour MongoDB
+app.use(async (req, res, next) => {
+    const MONGODB_URI = process.env.MONGODB_URI;
+    if (!MONGODB_URI) {
+        console.error('ERREUR CRITIQUE: MONGODB_URI est manquant (undefined) ! Vérifie tes Vercel Environment Variables.');
+        return res.status(500).json({ message: 'Configuration Base de Données manquante.' });
+    }
 
-if (MONGODB_URI && MONGODB_URI !== 'ton_lien_mongodb_ici') {
-    mongoose.connect(MONGODB_URI)
-        .then(() => console.log('✅ MongoDB connecté avec succès !'))
-        .catch(err => console.error('❌ Erreur de connexion MongoDB:', err));
-} else {
-    console.log('⚠️ ATTENTION: MONGODB_URI est manquant dans le fichier .env ! Insère-le pour lier la Base de Données.');
-}
+    try {
+        if (mongoose.connection.readyState !== 1) {
+            console.log('⏳ Connexion à MongoDB en cours (Serverless cold start)...');
+            await mongoose.connect(MONGODB_URI, {
+                serverSelectionTimeoutMS: 8000 // 8 secondes de timeout max
+            });
+            console.log('✅ MongoDB connecté !');
+        }
+        next();
+    } catch (err) {
+        console.error('❌ ECHEC DE CONNEXION MONGODB:', err.message);
+        res.status(500).json({ message: 'Impossible de se connecter à la DB.' });
+    }
+});
 
 // Routes
 app.get('/api/ping', (req, res) => res.json({ message: 'API fonctionne parfaitement sur Vercel !' }));
