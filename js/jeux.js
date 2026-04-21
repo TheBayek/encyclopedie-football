@@ -262,7 +262,7 @@ if(penaltyCanvas) {
         ctx2.font = "bold 20px Arial";
         ctx2.fillStyle = "rgba(255, 255, 255, 0.8)";
         ctx2.textAlign = "left";
-        ctx2.fillText("Série 🎯 : " + scorePenalty, 20, 30);
+        ctx2.fillText("🎯 : " + scorePenalty, 20, 30);
         ctx2.textAlign = "center";
         
         if(isGoal) {
