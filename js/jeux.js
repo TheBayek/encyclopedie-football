@@ -607,7 +607,9 @@ if(pongCanvas) {
     let hasStarted = false;
 
     function drawPong() {
-        ctx.clearRect(0,0, pongCanvas.width, pongCanvas.height);
+        // Remplir de gazon (vert) à chaque image au lieu de clearRect pour éviter le fond noir
+        ctx.fillStyle = "#1B5E20";
+        ctx.fillRect(0, 0, pongCanvas.width, pongCanvas.height);
 
         // draw center line
         ctx.fillStyle = "rgba(255,255,255,0.2)";
