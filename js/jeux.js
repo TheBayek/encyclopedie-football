@@ -195,6 +195,8 @@ if(penaltyCanvas) {
     let isGoal = false;
     let isMissed = false;
     let hasStartedPenalty = false;
+    let scorePenalty = 0;
+    let penaltySubmitted = false;
 
     function showStartScreenPenalty() {
         ctx2.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -208,8 +210,12 @@ if(penaltyCanvas) {
     function resetPenalty() {
         isShooting = false;
         ballY = 250;
+        if(isMissed) {
+             scorePenalty = 0;
+        }
         isGoal = false;
         isMissed = false;
+        penaltySubmitted = false;
     }
 
     function updatePenaltyGame() {
@@ -236,8 +242,13 @@ if(penaltyCanvas) {
                 // Check if hit
                 if(ballX >= targetX && ballX <= targetX + targetWidth) {
                     isGoal = true;
+                    scorePenalty++;
                 } else {
                     isMissed = true;
+                    if(!penaltySubmitted && typeof submitScoreAPI !== 'undefined') {
+                        submitScoreAPI('penalty', scorePenalty);
+                        penaltySubmitted = true;
+                    }
                 }
                 isShooting = false; // stop moving upwards
             }
@@ -247,6 +258,12 @@ if(penaltyCanvas) {
         ctx2.textAlign = "center";
         ctx2.textBaseline = "middle";
         ctx2.fillText("⚽", ballX, ballY);
+
+        ctx2.font = "bold 20px Arial";
+        ctx2.fillStyle = "rgba(255, 255, 255, 0.8)";
+        ctx2.textAlign = "left";
+        ctx2.fillText("Série 🎯 : " + scorePenalty, 20, 30);
+        ctx2.textAlign = "center";
         
         if(isGoal) {
             ctx2.fillStyle = "rgba(0, 255, 0, 0.8)";
