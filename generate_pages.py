@@ -139,7 +139,7 @@ for cat, data in categories.items():
         </nav>
     </header>
     <main>
-        <h2>{title} - Exploration Hyper-Détaillée (Vol. {i})</h2>
+        <h2>{title} | Page N°{i}</h2>
         <div class="content-body" style="text-align: justify;">
             {"".join(content_paragraphs)}
         </div>
