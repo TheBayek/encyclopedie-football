@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-Jeux Football</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .games-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            align-items: center;
+        }
+        .game-box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            text-align: center;
+            border: 3px solid var(--accent-color);
+            width: 100%;
+            max-width: 700px;
+        }
+        canvas {
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 10px;
+            cursor: crosshair;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.3);
+            margin-top: 20px;
+            border: 2px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Zone Arcade 🎮</h1>
+        <nav>
+            <ul>
+                <li><a href="../index.html">Accueil</a></li>
+                <li><a href="page1.html">Voir l'Encyclopédie (Page 1)</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h2 style="text-align:center; width:100%;">Détente & Mini-Jeux</h2>
+        <p style="text-align:center;">Tu veux te détendre après avoir lu notre énorme encyclopédie ? Essaie notre mini-jeu d'agilité avec le ballon ! ⚽</p>
+        
+        <div class="games-container">
+            <div class="game-box">
+                <h3>Le Dribble de la Mort ⚡</h3>
+                <p><strong>Règles :</strong> Utilise ta souris pour déplacer le ballon ⚽. Évite absolument les défenseurs 🛡️ qui tombent d'en haut. Si tu parviens à garder la balle pendant environ 10 secondes, l'accès au but 🟩 s'ouvrira en haut ! Fonce dedans pour marquer un MAGNIFIQUE BUT (et gagner).</p>
+                <canvas id="dribbleCanvas"></canvas>
+            </div>
+            
+            <div class="game-box">
+                <h3>Tirs au But (Timing) 🎯</h3>
+                <p><strong>Règles :</strong> La cible verte bouge très vite en haut. Clique pour tirer le ballon vers le haut quand tu penses être parfaitement aligné ! Si tu tapes dans le vert, c'est GAGNÉ.</p>
+                <canvas id="penaltyCanvas"></canvas>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2026 Site Football - Jeux Arcade</p>
+    </footer>
+    <script src="../js/jeux.js"></script>
+</body>
+</html>
