@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Membre - Footpédia</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 70vh;
+            padding: 2rem;
+        }
+        .auth-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            color: white;
+        }
+        .auth-box h2 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .auth-form input {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        .auth-btn {
+            padding: 12px;
+            background: linear-gradient(135deg, #1ABC9C, #16A085);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 188, 156, 0.4);
+        }
+        .auth-toggle {
+            margin-top: 20px;
+            cursor: pointer;
+            color: #bdc3c7;
+            text-decoration: underline;
+        }
+        .error-msg {
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><img src="../images/logo.png" alt="Logo Footpédia" class="site-logo"> Espace Membre</h1>
+        <nav>
+            <ul id="main-nav">
+                <li><a href="../index.html">Accueil</a></li>
+                <li><a href="jeux.html">Arcade</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="auth-container">
+            <!-- Login Form -->
+            <div class="auth-box" id="login-box">
+                <h2>Connexion</h2>
+                <form class="auth-form" id="login-form">
+                    <input type="email" id="log-email" placeholder="Email" required>
+                    <input type="password" id="log-password" placeholder="Mot de passe" required>
+                    <button type="submit" class="auth-btn">Se connecter 🔓</button>
+                    <div class="error-msg" id="log-error">Identifiants incorrects</div>
+                </form>
+                <div class="auth-toggle" onclick="toggleAuth('register')">Pas encore de compte ? S'inscrire ici</div>
+            </div>
+
+            <!-- Register Form -->
+            <div class="auth-box" id="register-box" style="display: none;">
+                <h2>Créer un compte</h2>
+                <form class="auth-form" id="register-form">
+                    <input type="text" id="reg-pseudo" placeholder="Pseudonyme" required>
+                    <input type="email" id="reg-email" placeholder="Email" required>
+                    <input type="password" id="reg-password" placeholder="Mot de passe" required>
+                    <button type="submit" class="auth-btn">Rejoindre Arcade 🚀</button>
+                    <div class="error-msg" id="reg-error">Erreur lors de l'inscription</div>
+                </form>
+                <div class="auth-toggle" onclick="toggleAuth('login')">Déjà membre ? Se connecter</div>
+            </div>
+            
+            <!-- Logged In State -->
+            <div class="auth-box" id="logged-box" style="display: none; max-width: 600px;">
+                <h2 id="welcome-msg">Bienvenue !</h2>
+                <p>Ton compte est connecté à la base de données de manière sécurisée et synchronisée.</p>
+                
+                <h3 style="margin-top: 25px; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px;">Tes Records Personnels 🏆</h3>
+                <div id="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; text-align: left;">
+                    <!-- Rempli dynamiquement -->
+                </div>
+
+                <button onclick="logoutAction()" class="auth-btn" style="background: linear-gradient(135deg, #e74c3c, #c0392b); margin-top:25px; width:100%;">Se déconnecter 🔒</button>
+            </div>
+        </div>
+    </main>
+    <script src="../js/auth.js"></script>
+    <script src="../js/script.js"></script>
+</body>
+</html>

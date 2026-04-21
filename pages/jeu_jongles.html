@@ -30,6 +30,7 @@
                 <p><strong>Règles :</strong> Clique sur le ballon AVANT qu'il ne touche le sol pour jongler. Combien de jongles feras-tu ?</p>
                 <div>
                     <button class="btn-action" onclick="toggleFullscreen()">📺 Plein Écran (F)</button>
+                    <button class="btn-action" style="background:#f39c12; margin-left:10px;" onclick="showLeaderboard('jongles', 'Jongles Pro')">📊 Top 5</button>
                 </div>
                 <canvas id="jonglesCanvas"></canvas>
             </div>
@@ -42,6 +43,7 @@
             else { document.exitFullscreen(); }
         }
     </script>
+    <script src="../js/script.js"></script>
     <script src="../js/jeux.js"></script>
 </body>
 </html>

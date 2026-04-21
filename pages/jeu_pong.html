@@ -30,6 +30,7 @@
                 <p><strong>Règles :</strong> C'est Pong sur gazon ! Pointe ta souris pour bouger ta raquette (le gardien) et gagne contre l'Ordi.</p>
                 <div>
                     <button class="btn-action" onclick="toggleFullscreen()">📺 Plein Écran (F)</button>
+                    <button class="btn-action" style="background:#f39c12; margin-left:10px;" onclick="showLeaderboard('pong', 'Péno-Pong')">📊 Top 5</button>
                 </div>
                 <canvas id="pongCanvas"></canvas>
             </div>
@@ -42,6 +43,7 @@
             else { document.exitFullscreen(); }
         }
     </script>
+    <script src="../js/script.js"></script>
     <script src="../js/jeux.js"></script>
 </body>
 </html>

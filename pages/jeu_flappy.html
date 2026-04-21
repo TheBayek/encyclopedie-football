@@ -30,6 +30,7 @@
                 <p><strong>Règles :</strong> Clique pour faire sauter le ballon. Passe à travers les portes sans jamais les toucher ni toucher le sol !</p>
                 <div>
                     <button class="btn-action" onclick="toggleFullscreen()">📺 Plein Écran (F)</button>
+                    <button class="btn-action" style="background:#f39c12; margin-left:10px;" onclick="showLeaderboard('flappy', 'Flappy Ball')">📊 Top 5</button>
                 </div>
                 <canvas id="flappyCanvas"></canvas>
             </div>
@@ -42,6 +43,7 @@
             else { document.exitFullscreen(); }
         }
     </script>
+    <script src="../js/script.js"></script>
     <script src="../js/jeux.js"></script>
 </body>
 </html>

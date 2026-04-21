@@ -30,6 +30,7 @@
                 <p><strong>Règles :</strong> Déplace la souris pour esquiver les défenseurs 🛡️. Survis 10 secondes pour ouvrir la voie du but 🟩 !</p>
                 <div>
                     <button class="btn-action" onclick="toggleFullscreen()">📺 Plein Écran (F)</button>
+                    <button class="btn-action" style="background:#f39c12; margin-left:10px;" onclick="showLeaderboard('dribble', 'Dribble de la Mort')">📊 Top 5</button>
                 </div>
                 <canvas id="dribbleCanvas"></canvas>
             </div>
@@ -42,6 +43,7 @@
             else { document.exitFullscreen(); }
         }
     </script>
+    <script src="../js/script.js"></script>
     <script src="../js/jeux.js"></script>
 </body>
 </html>

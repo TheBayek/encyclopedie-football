@@ -91,6 +91,7 @@ if(dribbleCanvas) {
             let dy = player.y - d.y;
             let distance = Math.sqrt(dx*dx + dy*dy);
             if(distance < 25) {
+                if(!isGameOver && typeof submitScoreAPI !== 'undefined') submitScoreAPI('dribble', score);
                 isGameOver = true;
             }
         }
@@ -325,6 +326,7 @@ if(jonglesCanvas) {
         ball.y += ball.vy;
 
         if (ball.y >= jonglesCanvas.height - ball.radius) {
+            if(!isGameOver && typeof submitScoreAPI !== 'undefined') submitScoreAPI('jongles', score);
             isGameOver = true;
         }
 
@@ -438,6 +440,7 @@ if(gardienCanvas) {
             ctx.fillText("⚽", b.x, b.y);
 
             if(b.timer > b.maxTimer) {
+                if(!isGameOver && typeof submitScoreAPI !== 'undefined') submitScoreAPI('gardien', score);
                 isGameOver = true;
             }
         }
@@ -547,6 +550,7 @@ if(flappyCanvas) {
             let bx = 100, by = ballY;
             if(bx + 15 > p.x && bx - 15 < p.x + 50) {
                 if(by - 15 < p.gapY - 60 || by + 15 > p.gapY + 60) {
+                    if(!isGameOver && typeof submitScoreAPI !== 'undefined') submitScoreAPI('flappy', score);
                     isGameOver = true;
                 }
             }
@@ -555,7 +559,10 @@ if(flappyCanvas) {
 
         if(pipes.length > 0 && pipes[0].x < -50) pipes.shift();
 
-        if(ballY > flappyCanvas.height || ballY < 0) isGameOver = true;
+        if(ballY > flappyCanvas.height || ballY < 0) {
+            if(!isGameOver && typeof submitScoreAPI !== 'undefined') submitScoreAPI('flappy', score);
+            isGameOver = true;
+        }
 
         ctx.font = "30px Arial";
         ctx.textAlign = "center";
@@ -636,7 +643,7 @@ if(pongCanvas) {
 
         // goal
         if(ball.x < 0) { scoreA++; ball = {x: 300, y: 200, vx: 5, vy: (Math.random()>0.5?5:-5), r: 15}; }
-        if(ball.x > 600) { scoreP++; ball = {x: 300, y: 200, vx: -5, vy: (Math.random()>0.5?5:-5), r: 15}; }
+        if(ball.x > 600) { scoreP++; if(typeof submitScoreAPI !== 'undefined') submitScoreAPI('pong', scoreP); ball = {x: 300, y: 200, vx: -5, vy: (Math.random()>0.5?5:-5), r: 15}; }
 
         // draw paddles
         ctx.fillStyle = "white";
@@ -677,4 +684,22 @@ if(pongCanvas) {
     ctx.font = "bold 30px Arial";
     ctx.textAlign = "center";
     ctx.fillText("BOUGE LA SOURIS ET CLIQUE", 300, 200);
+}
+
+// --- LEADERBOARD & STATS API ---
+async function submitScoreAPI(game, finalScore) {
+    const token = localStorage.getItem('token');
+    if(!token) return;
+    try {
+        await fetch('/api/stats/update', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-auth-token': token
+            },
+            body: JSON.stringify({ game: game, score: finalScore })
+        });
+    } catch(err) {
+        console.error("Score setup err: ", err);
+    }
 }
