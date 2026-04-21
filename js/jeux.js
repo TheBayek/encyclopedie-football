@@ -218,13 +218,13 @@ if(penaltyCanvas) {
         // Draw moving target if not resolved
         if(!isShooting || ballY > 40) {
             targetX += targetSpeed;
-            if(targetX > penaltyCanvas.width - targetWidth || targetX < 0) {
+            if(targetX > LOGICAL_W - targetWidth || targetX < 0) {
                 targetSpeed = -targetSpeed;
             }
         }
         
         ctx2.fillStyle = "#ff4444"; // Default goal is red (miss)
-        ctx2.fillRect(0, 0, penaltyCanvas.width, 40);
+        ctx2.fillRect(0, 0, LOGICAL_W, 40);
         
         ctx2.fillStyle = "#00ff00"; // The valid green target area
         ctx2.fillRect(targetX, 0, targetWidth, 40);
