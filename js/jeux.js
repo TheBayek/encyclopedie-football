@@ -1,3 +1,13 @@
+if (!document.getElementById("hires-style")) {
+    const style = document.createElement("style");
+    style.id = "hires-style";
+    style.innerHTML = `
+        canvas { width: 100%; max-width: 600px; height: auto; }
+        canvas:fullscreen { max-width: none !important; width: 100vw !important; height: 100vh !important; }
+    `;
+    document.head.appendChild(style);
+}
+
 document.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'f') {
         const canvas = document.querySelector('canvas');
@@ -15,8 +25,11 @@ document.addEventListener('keydown', (e) => {
 const dribbleCanvas = document.getElementById("dribbleCanvas");
 if(dribbleCanvas) {
     const ctx = dribbleCanvas.getContext("2d");
-    dribbleCanvas.width = 600;
-    dribbleCanvas.height = 500;
+    const LOGICAL_W = 600;
+    const LOGICAL_H = 500;
+    dribbleCanvas.width = LOGICAL_W * 3;
+    dribbleCanvas.height = LOGICAL_H * 3;
+    ctx.scale(3, 3);
 
     let player = { x: 300, y: 400, radius: 15 };
     let defenders = [];
@@ -38,8 +51,8 @@ if(dribbleCanvas) {
     // Mouse movement
     dribbleCanvas.addEventListener("mousemove", (e) => {
         const rect = dribbleCanvas.getBoundingClientRect();
-        const scaleX = dribbleCanvas.width / rect.width;
-        const scaleY = dribbleCanvas.height / rect.height;
+        const scaleX = LOGICAL_W / rect.width;
+        const scaleY = LOGICAL_H / rect.height;
         player.x = (e.clientX - rect.left) * scaleX;
         player.y = (e.clientY - rect.top) * scaleY;
     });
@@ -165,8 +178,11 @@ if(dribbleCanvas) {
 const penaltyCanvas = document.getElementById("penaltyCanvas");
 if(penaltyCanvas) {
     const ctx2 = penaltyCanvas.getContext("2d");
-    penaltyCanvas.width = 600;
-    penaltyCanvas.height = 300;
+    const LOGICAL_W = 600;
+    const LOGICAL_H = 300;
+    penaltyCanvas.width = LOGICAL_W * 3;
+    penaltyCanvas.height = LOGICAL_H * 3;
+    ctx2.scale(3, 3);
 
     let targetX = 0;
     let targetSpeed = 8;
@@ -274,8 +290,11 @@ if(penaltyCanvas) {
 const jonglesCanvas = document.getElementById("jonglesCanvas");
 if(jonglesCanvas) {
     const ctx = jonglesCanvas.getContext("2d");
-    jonglesCanvas.width = 600;
-    jonglesCanvas.height = 400;
+    const LOGICAL_W = 600;
+    const LOGICAL_H = 400;
+    jonglesCanvas.width = LOGICAL_W * 3;
+    jonglesCanvas.height = LOGICAL_H * 3;
+    ctx.scale(3, 3);
 
     let ball = { x: 300, y: 50, vy: 0, radius: 25 };
     let gravity = 0.5;
@@ -335,8 +354,8 @@ if(jonglesCanvas) {
             return;
         }
         const rect = jonglesCanvas.getBoundingClientRect();
-        const scaleX = jonglesCanvas.width / rect.width;
-        const scaleY = jonglesCanvas.height / rect.height;
+        const scaleX = LOGICAL_W / rect.width;
+        const scaleY = LOGICAL_H / rect.height;
         const mx = (e.clientX - rect.left) * scaleX;
         const my = (e.clientY - rect.top) * scaleY;
         const dist = Math.hypot(ball.x - mx, ball.y - my);
@@ -362,8 +381,11 @@ if(jonglesCanvas) {
 const gardienCanvas = document.getElementById("gardienCanvas");
 if(gardienCanvas) {
     const ctx = gardienCanvas.getContext("2d");
-    gardienCanvas.width = 600;
-    gardienCanvas.height = 400;
+    const LOGICAL_W = 600;
+    const LOGICAL_H = 400;
+    gardienCanvas.width = LOGICAL_W * 3;
+    gardienCanvas.height = LOGICAL_H * 3;
+    ctx.scale(3, 3);
 
     let balls = [];
     let score = 0;
@@ -439,8 +461,8 @@ if(gardienCanvas) {
             return;
         }
         const rect = gardienCanvas.getBoundingClientRect();
-        const scaleX = gardienCanvas.width / rect.width;
-        const scaleY = gardienCanvas.height / rect.height;
+        const scaleX = LOGICAL_W / rect.width;
+        const scaleY = LOGICAL_H / rect.height;
         const mx = (e.clientX - rect.left) * scaleX;
         const my = (e.clientY - rect.top) * scaleY;
         
@@ -467,8 +489,11 @@ if(gardienCanvas) {
 const flappyCanvas = document.getElementById("flappyCanvas");
 if(flappyCanvas) {
     const ctx = flappyCanvas.getContext("2d");
-    flappyCanvas.width = 600;
-    flappyCanvas.height = 400;
+    const LOGICAL_W = 600;
+    const LOGICAL_H = 400;
+    flappyCanvas.width = LOGICAL_W * 3;
+    flappyCanvas.height = LOGICAL_H * 3;
+    ctx.scale(3, 3);
 
     let ballY = 200;
     let ballV = 0;
@@ -568,8 +593,11 @@ if(flappyCanvas) {
 const pongCanvas = document.getElementById("pongCanvas");
 if(pongCanvas) {
     const ctx = pongCanvas.getContext("2d");
-    pongCanvas.width = 600;
-    pongCanvas.height = 400;
+    const LOGICAL_W = 600;
+    const LOGICAL_H = 400;
+    pongCanvas.width = LOGICAL_W * 3;
+    pongCanvas.height = LOGICAL_H * 3;
+    ctx.scale(3, 3);
 
     let playerY = 150;
     let aiY = 150;
@@ -629,7 +657,7 @@ if(pongCanvas) {
 
     pongCanvas.addEventListener("mousemove", (e) => {
         const rect = pongCanvas.getBoundingClientRect();
-        const scaleY = pongCanvas.height / rect.height;
+        const scaleY = LOGICAL_H / rect.height;
         playerY = (e.clientY - rect.top) * scaleY - 40; // center paddle
         playerY = Math.max(0, Math.min(320, playerY));
     });
