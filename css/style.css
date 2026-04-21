@@ -103,12 +103,10 @@ header h1 {
 }
 
 .site-logo {
-    width: 65px;
-    height: 65px;
-    margin-right: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    border: 2px solid white;
+    width: 90px;
+    height: auto;
+    margin-right: 25px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
     -webkit-text-fill-color: initial;
 }
 
