@@ -515,7 +515,7 @@ if(flappyCanvas) {
 
     function createPipe() {
         let gapY = Math.random() * 200 + 100;
-        pipes.push({ x: 600, gapY: gapY });
+        pipes.push({ x: 600, gapY: gapY, passed: false });
     }
 
     function drawFlappy() {
@@ -554,7 +554,11 @@ if(flappyCanvas) {
                     isGameOver = true;
                 }
             }
-            if(p.x === 100) score++;
+            // Score
+            if (!p.passed && p.x + 50 < 100) {
+                p.passed = true;
+                score++;
+            }
         }
 
         if(pipes.length > 0 && pipes[0].x < -50) pipes.shift();
