@@ -1,9 +1,12 @@
 document.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'f') {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => console.log(err));
-        } else {
-            document.exitFullscreen();
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+            if (!document.fullscreenElement) {
+                canvas.requestFullscreen().catch(err => console.log(err));
+            } else {
+                document.exitFullscreen();
+            }
         }
     }
 });
