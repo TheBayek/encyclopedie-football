@@ -5,30 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Péno-Pong - Footpédia Arcade</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
-    <link rel="stylesheet" href="../css/style.css">
     <style>
-        .games-container { display: flex; flex-direction: column; align-items: center; padding: 2rem; }
-        .game-box { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); text-align: center; border: 3px solid var(--accent-color); width: 100%; max-width: 800px; color: #333; }
-        canvas { background: #1B5E20; border-radius: 10px; cursor: none; box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.3); margin-top: 20px; border: 2px solid #fff; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;800&display=swap');
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Inter', sans-serif;}
+        canvas { width: 100vw; height: 100vh; object-fit: contain; background: #1B5E20; display: block; }
+        .ui-overlay { position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; gap: 15px; }
+        .btn-action { padding: 10px 20px; background: rgba(0,0,0,0.6); border: 2px solid rgba(255,255,255,0.5); color: white; border-radius: 8px; text-decoration: none; font-weight: bold; backdrop-filter: blur(5px); transition: all 0.2s; cursor: pointer; }
+        .btn-action:hover { background: rgba(255,255,255,1); color: black; border-color: white; transform: scale(1.05); }
+        .instructions { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.6); pointer-events: none; font-size: 14px; text-align: center; }
     </style>
 </head>
 <body>
-    <header>
-        <h1><img src="../images/logo.png" alt="Logo Footpédia" class="site-logo"> Péno-Pong</h1>
-        <nav>
-            <ul>
-                <li><a href="jeux.html">⬅ Retour à l'Arcade</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main>
-        <div class="games-container">
-            <div class="game-box">
-                <p><strong>Règles :</strong> C'est Pong, sur gazon ! Pointe ta souris pour bouger ta raquette (le gardien gauche) et gagne avec 5 buts d'avance contre l'Ordi.</p>
-                <canvas id="pongCanvas"></canvas>
-            </div>
-        </div>
-    </main>
+    <div class="ui-overlay">
+        <a href="jeux.html" class="btn-action">⬅️ Quitter au Menu</a>
+        <div class="btn-action" onclick="toggleFullscreen()">📺 [F] Plein Écran</div>
+    </div>
+    <div class="instructions">Péno-Pong • Bouge la souris de haut en bas pour écraser l'ordinateur !</div>
+    <canvas id="pongCanvas"></canvas>
+    
+    <script>
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); }
+            else { document.exitFullscreen(); }
+        }
+    </script>
     <script src="../js/jeux.js"></script>
 </body>
 </html>

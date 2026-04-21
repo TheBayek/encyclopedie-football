@@ -1,3 +1,13 @@
+document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'f') {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => console.log(err));
+        } else {
+            document.exitFullscreen();
+        }
+    }
+});
+
 // -- LOGIQUE DU JEU "DRIBBLE DE LA MORT" --
 const dribbleCanvas = document.getElementById("dribbleCanvas");
 if(dribbleCanvas) {
@@ -25,8 +35,10 @@ if(dribbleCanvas) {
     // Mouse movement
     dribbleCanvas.addEventListener("mousemove", (e) => {
         const rect = dribbleCanvas.getBoundingClientRect();
-        player.x = e.clientX - rect.left;
-        player.y = e.clientY - rect.top;
+        const scaleX = dribbleCanvas.width / rect.width;
+        const scaleY = dribbleCanvas.height / rect.height;
+        player.x = (e.clientX - rect.left) * scaleX;
+        player.y = (e.clientY - rect.top) * scaleY;
     });
 
     function spawnDefender() {
@@ -320,8 +332,10 @@ if(jonglesCanvas) {
             return;
         }
         const rect = jonglesCanvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+        const scaleX = jonglesCanvas.width / rect.width;
+        const scaleY = jonglesCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
         const dist = Math.hypot(ball.x - mx, ball.y - my);
         if(dist < ball.radius * 2) { // Give a nice hit box
             ball.vy = -12; // upward bump
@@ -422,8 +436,10 @@ if(gardienCanvas) {
             return;
         }
         const rect = gardienCanvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+        const scaleX = gardienCanvas.width / rect.width;
+        const scaleY = gardienCanvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
         
         for(let i=balls.length-1; i>=0; i--) {
             let b = balls[i];
@@ -610,7 +626,8 @@ if(pongCanvas) {
 
     pongCanvas.addEventListener("mousemove", (e) => {
         const rect = pongCanvas.getBoundingClientRect();
-        playerY = e.clientY - rect.top - 40; // center paddle
+        const scaleY = pongCanvas.height / rect.height;
+        playerY = (e.clientY - rect.top) * scaleY - 40; // center paddle
         playerY = Math.max(0, Math.min(320, playerY));
     });
 
