@@ -254,3 +254,377 @@ if(penaltyCanvas) {
 
     showStartScreenPenalty();
 }
+
+// -- LOGIQUE DU JEU "JONGLES" --
+const jonglesCanvas = document.getElementById("jonglesCanvas");
+if(jonglesCanvas) {
+    const ctx = jonglesCanvas.getContext("2d");
+    jonglesCanvas.width = 600;
+    jonglesCanvas.height = 400;
+
+    let ball = { x: 300, y: 50, vy: 0, radius: 25 };
+    let gravity = 0.5;
+    let score = 0;
+    let isGameOver = false;
+    let hasStarted = false;
+
+    function resetJongles() {
+        ball = { x: 300, y: 50, vy: 0, radius: 25 };
+        score = 0;
+        isGameOver = false;
+    }
+
+    function drawJongles() {
+        ctx.clearRect(0,0, jonglesCanvas.width, jonglesCanvas.height);
+        if(isGameOver) {
+            ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+            ctx.fillRect(0,0, jonglesCanvas.width, jonglesCanvas.height);
+            ctx.fillStyle = "white";
+            ctx.font = "bold 40px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("Tombé... Score: " + score, 300, 150);
+            return;
+        }
+
+        // update physics
+        ball.vy += gravity;
+        ball.y += ball.vy;
+
+        if (ball.y >= jonglesCanvas.height - ball.radius) {
+            isGameOver = true;
+        }
+
+        // draw ball
+        ctx.font = "50px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("⚽", ball.x, ball.y);
+
+        // draw score
+        ctx.fillStyle = "white";
+        ctx.font = "30px Arial";
+        ctx.fillText("Score: " + score, 300, 30);
+
+        requestAnimationFrame(drawJongles);
+    }
+
+    jonglesCanvas.addEventListener("mousedown", (e) => {
+        if(!hasStarted) {
+            hasStarted = true;
+            drawJongles();
+            return;
+        }
+        if(isGameOver) {
+            resetJongles();
+            drawJongles();
+            return;
+        }
+        const rect = jonglesCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const dist = Math.hypot(ball.x - mx, ball.y - my);
+        if(dist < ball.radius * 2) { // Give a nice hit box
+            ball.vy = -12; // upward bump
+            // Add some horizontal randomness
+            ball.x += (Math.random() - 0.5) * 40;
+            // keep inside bounds
+            ball.x = Math.max(50, Math.min(550, ball.x));
+            score++;
+        }
+    });
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0,0, jonglesCanvas.width, jonglesCanvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "bold 30px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("CLIQUE SUR LA BALLE POUR JONGLER", 300, 200);
+}
+
+// -- LOGIQUE DU JEU "GARDIEN" --
+const gardienCanvas = document.getElementById("gardienCanvas");
+if(gardienCanvas) {
+    const ctx = gardienCanvas.getContext("2d");
+    gardienCanvas.width = 600;
+    gardienCanvas.height = 400;
+
+    let balls = [];
+    let score = 0;
+    let isGameOver = false;
+    let hasStarted = false;
+    let frameRate = 0;
+
+    function resetGardien() {
+        balls = [];
+        score = 0;
+        frameRate = 0;
+        isGameOver = false;
+    }
+
+    function drawGardien() {
+        ctx.clearRect(0,0, gardienCanvas.width, gardienCanvas.height);
+        if(isGameOver) {
+            ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+            ctx.fillRect(0,0, gardienCanvas.width, gardienCanvas.height);
+            ctx.fillStyle = "white";
+            ctx.font = "bold 40px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("But encaissé ! Arrêts : " + score, 300, 200);
+            return;
+        }
+
+        frameRate++;
+        // Spawn interval gets faster as score increases
+        let spawnRate = Math.max(30, 80 - score * 2);
+        if(frameRate > spawnRate) {
+            frameRate = 0;
+            balls.push({
+                x: Math.random() * 500 + 50,
+                y: Math.random() * 300 + 50,
+                timer: 0,
+                maxTimer: 100 // frames before it enters goal
+            });
+        }
+
+        ctx.font = "50px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for(let i=0; i<balls.length; i++) {
+            let b = balls[i];
+            b.timer++;
+            // draw ball getting larger (coming closer)
+            let size = 20 + (b.timer/b.maxTimer)*40;
+            ctx.font = size + "px Arial";
+            ctx.fillText("⚽", b.x, b.y);
+
+            if(b.timer > b.maxTimer) {
+                isGameOver = true;
+            }
+        }
+
+        ctx.fillStyle = "white";
+        ctx.font = "20px Arial";
+        ctx.fillText("Arrêts : " + score, 80, 30);
+
+        requestAnimationFrame(drawGardien);
+    }
+
+    gardienCanvas.addEventListener("mousedown", (e) => {
+        if(!hasStarted) {
+            hasStarted = true;
+            drawGardien();
+            return;
+        }
+        if(isGameOver) {
+            resetGardien();
+            drawGardien();
+            return;
+        }
+        const rect = gardienCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        
+        for(let i=balls.length-1; i>=0; i--) {
+            let b = balls[i];
+            let dist = Math.hypot(b.x - mx, b.y - my);
+            if(dist < 50) {
+                balls.splice(i, 1);
+                score++;
+                break; // only catch one per click
+            }
+        }
+    });
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0,0, gardienCanvas.width, gardienCanvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "bold 30px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("CLIQUE SUR LES BALLONS RAPIDEMENT", 300, 200);
+}
+
+// -- LOGIQUE DU JEU "FLAPPY" --
+const flappyCanvas = document.getElementById("flappyCanvas");
+if(flappyCanvas) {
+    const ctx = flappyCanvas.getContext("2d");
+    flappyCanvas.width = 600;
+    flappyCanvas.height = 400;
+
+    let ballY = 200;
+    let ballV = 0;
+    let pipes = [];
+    let score = 0;
+    let isGameOver = false;
+    let hasStarted = false;
+
+    function resetFlappy() {
+        ballY = 200;
+        ballV = 0;
+        pipes = [];
+        score = 0;
+        isGameOver = false;
+    }
+
+    function createPipe() {
+        let gapY = Math.random() * 200 + 100;
+        pipes.push({ x: 600, gapY: gapY });
+    }
+
+    function drawFlappy() {
+        ctx.clearRect(0,0, flappyCanvas.width, flappyCanvas.height);
+        if(isGameOver) {
+            ctx.fillStyle = "rgba(255, 0, 0, 0.8)";
+            ctx.fillRect(0,0, flappyCanvas.width, flappyCanvas.height);
+            ctx.fillStyle = "white";
+            ctx.font = "bold 40px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("CRASH ! Score: " + score, 300, 200);
+            return;
+        }
+
+        ballV += 0.4; // gravity
+        ballY += ballV;
+
+        if(pipes.length === 0 || pipes[pipes.length-1].x < 400) {
+            createPipe();
+        }
+
+        ctx.fillStyle = "#2ecc71"; // pipe green
+        for(let i=0; i<pipes.length; i++) {
+            let p = pipes[i];
+            p.x -= 3;
+            // Draw top pipe
+            ctx.fillRect(p.x, 0, 50, p.gapY - 60);
+            // Draw bot pipe
+            ctx.fillRect(p.x, p.gapY + 60, 50, flappyCanvas.height);
+
+            // Collision
+            let bx = 100, by = ballY;
+            if(bx + 15 > p.x && bx - 15 < p.x + 50) {
+                if(by - 15 < p.gapY - 60 || by + 15 > p.gapY + 60) {
+                    isGameOver = true;
+                }
+            }
+            if(p.x === 100) score++;
+        }
+
+        if(pipes.length > 0 && pipes[0].x < -50) pipes.shift();
+
+        if(ballY > flappyCanvas.height || ballY < 0) isGameOver = true;
+
+        ctx.font = "30px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("⚽", 100, ballY);
+
+        ctx.fillStyle = "white";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText(score, 300, 30);
+
+        requestAnimationFrame(drawFlappy);
+    }
+
+    flappyCanvas.addEventListener("mousedown", () => {
+        if(!hasStarted) {
+            hasStarted = true;
+            drawFlappy();
+        } else if(isGameOver) {
+            resetFlappy();
+            drawFlappy();
+        } else {
+            ballV = -7;
+        }
+    });
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0,0, flappyCanvas.width, flappyCanvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "bold 30px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("CLIQUE POUR VOLER", 300, 200);
+}
+
+// -- LOGIQUE DU JEU "PONG" --
+const pongCanvas = document.getElementById("pongCanvas");
+if(pongCanvas) {
+    const ctx = pongCanvas.getContext("2d");
+    pongCanvas.width = 600;
+    pongCanvas.height = 400;
+
+    let playerY = 150;
+    let aiY = 150;
+    let ball = {x: 300, y: 200, vx: 5, vy: 5, r: 15};
+    let scoreP = 0;
+    let scoreA = 0;
+    let hasStarted = false;
+
+    function drawPong() {
+        ctx.clearRect(0,0, pongCanvas.width, pongCanvas.height);
+
+        // draw center line
+        ctx.fillStyle = "rgba(255,255,255,0.2)";
+        ctx.fillRect(298, 0, 4, 400);
+
+        // move ai
+        let targetY = ball.y - 40;
+        aiY += (targetY - aiY) * 0.1;
+
+        // update ball
+        ball.x += ball.vx * 1.2;
+        ball.y += ball.vy * 1.2;
+
+        if(ball.y <= 0 || ball.y >= 400 - ball.r) ball.vy *= -1;
+
+        // collision player
+        if(ball.x - ball.r < 30 && ball.y > playerY && ball.y < playerY + 80) {
+            ball.vx = Math.abs(ball.vx);
+        }
+        // collision AI
+        if(ball.x + ball.r > 570 && ball.y > aiY && ball.y < aiY + 80) {
+            ball.vx = -Math.abs(ball.vx);
+        }
+
+        // goal
+        if(ball.x < 0) { scoreA++; ball = {x: 300, y: 200, vx: 5, vy: (Math.random()>0.5?5:-5), r: 15}; }
+        if(ball.x > 600) { scoreP++; ball = {x: 300, y: 200, vx: -5, vy: (Math.random()>0.5?5:-5), r: 15}; }
+
+        // draw paddles
+        ctx.fillStyle = "white";
+        ctx.fillRect(10, playerY, 20, 80);
+        ctx.fillRect(570, aiY, 20, 80);
+
+        // draw ball
+        ctx.font = "30px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("⚽", ball.x, ball.y);
+
+        // score
+        ctx.font = "bold 40px Arial";
+        ctx.fillText(scoreP, 150, 50);
+        ctx.fillText(scoreA, 450, 50);
+
+        requestAnimationFrame(drawPong);
+    }
+
+    pongCanvas.addEventListener("mousemove", (e) => {
+        const rect = pongCanvas.getBoundingClientRect();
+        playerY = e.clientY - rect.top - 40; // center paddle
+        playerY = Math.max(0, Math.min(320, playerY));
+    });
+
+    pongCanvas.addEventListener("mousedown", () => {
+        if(!hasStarted) {
+            hasStarted = true;
+            drawPong();
+        }
+    });
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0,0, pongCanvas.width, pongCanvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "bold 30px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("BOUGE LA SOURIS ET CLIQUE", 300, 200);
+}

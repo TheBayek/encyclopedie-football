@@ -7,29 +7,67 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
     <link rel="stylesheet" href="../css/style.css">
     <style>
-        .games-container {
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
-            align-items: center;
-        }
-        .game-box {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        .hub-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
             text-align: center;
-            border: 3px solid var(--accent-color);
-            width: 100%;
-            max-width: 700px;
         }
-        canvas {
-            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
-            border-radius: 10px;
-            cursor: crosshair;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.3);
-            margin-top: 20px;
-            border: 2px solid #fff;
+
+        .neal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .neal-card {
+            position: relative;
+            height: 180px;
+            border-radius: 12px;
+            text-decoration: none;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .neal-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.8);
+        }
+
+        .emoji-bg {
+            position: absolute;
+            font-size: 6rem;
+            opacity: 0.15;
+            rotate: -15deg;
+            right: -20px;
+            bottom: -20px;
+            transition: transform 0.3s ease;
+        }
+
+        .neal-card:hover .emoji-bg {
+            transform: rotate(5deg) scale(1.1);
+            opacity: 0.25;
+        }
+
+        .card-title {
+            position: relative;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+            z-index: 2;
+            letter-spacing: 1px;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
@@ -39,25 +77,40 @@
         <nav>
             <ul>
                 <li><a href="../index.html">Accueil</a></li>
-                <li><a href="page1.html">Voir l'Encyclopédie (Page 1)</a></li>
+                <li><a href="page1.html">L'Encyclopédie Officielle</a></li>
             </ul>
         </nav>
     </header>
     <main>
-        <h2 style="text-align:center; width:100%;">Détente & Mini-Jeux</h2>
-        <p style="text-align:center;">Tu veux te détendre après avoir lu notre énorme encyclopédie ? Essaie notre mini-jeu d'agilité avec le ballon ! ⚽</p>
-        
-        <div class="games-container">
-            <div class="game-box">
-                <h3>Le Dribble de la Mort ⚡</h3>
-                <p><strong>Règles :</strong> Utilise ta souris pour déplacer le ballon ⚽. Évite absolument les défenseurs 🛡️ qui tombent d'en haut. Si tu parviens à garder la balle pendant environ 10 secondes, l'accès au but 🟩 s'ouvrira en haut ! Fonce dedans pour marquer un MAGNIFIQUE BUT (et gagner).</p>
-                <canvas id="dribbleCanvas"></canvas>
-            </div>
+        <div class="hub-container">
+            <h2 style="font-size: 2.5rem; margin-bottom: 5px;">Collection de Mini-Jeux</h2>
+            <p style="font-size: 1.2rem; color: #555;">Détends-toi après avoir exploré l'encyclopédie. (Sélectionne un jeu)</p>
             
-            <div class="game-box">
-                <h3>Tirs au But (Timing) 🎯</h3>
-                <p><strong>Règles :</strong> La cible verte bouge très vite en haut. Clique pour tirer le ballon vers le haut quand tu penses être parfaitement aligné ! Si tu tapes dans le vert, c'est GAGNÉ.</p>
-                <canvas id="penaltyCanvas"></canvas>
+            <div class="neal-grid">
+                <a href="jeu_dribble.html" class="neal-card" style="background: linear-gradient(135deg, #FF6B6B, #C0392B);">
+                    <div class="emoji-bg">⚽🛡️</div>
+                    <div class="card-title">Dribble de la Mort</div>
+                </a>
+                <a href="jeu_penalty.html" class="neal-card" style="background: linear-gradient(135deg, #1ABC9C, #16A085);">
+                    <div class="emoji-bg">🎯🥅</div>
+                    <div class="card-title">Tirs au But</div>
+                </a>
+                <a href="jeu_jongles.html" class="neal-card" style="background: linear-gradient(135deg, #F1C40F, #F39C12);">
+                    <div class="emoji-bg">👟⚽</div>
+                    <div class="card-title">Jongles Infini</div>
+                </a>
+                <a href="jeu_gardien.html" class="neal-card" style="background: linear-gradient(135deg, #3498DB, #2980B9);">
+                    <div class="emoji-bg">🧤⚡</div>
+                    <div class="card-title">Arrêt Réflexe</div>
+                </a>
+                <a href="jeu_flappy.html" class="neal-card" style="background: linear-gradient(135deg, #9B59B6, #8E44AD);">
+                    <div class="emoji-bg">🦅⚽</div>
+                    <div class="card-title">Flappy Ball</div>
+                </a>
+                <a href="jeu_pong.html" class="neal-card" style="background: linear-gradient(135deg, #2C3E50, #000000);">
+                    <div class="emoji-bg">🏓⚽</div>
+                    <div class="card-title">Péno-Pong</div>
+                </a>
             </div>
         </div>
     </main>
