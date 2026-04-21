@@ -8,13 +8,7 @@ function afficherMessage() {
 
 // Fonction pour changer la couleur du header au clic
 document.addEventListener('DOMContentLoaded', function() {
-    const header = document.querySelector('header');
-    if (header) {
-        header.addEventListener('click', function() {
-            header.style.backgroundColor = header.style.backgroundColor === 'rgb(27, 94, 32)' ? '#4CAF50' : '#1B5E20';
-        });
-    }
-    
+    // Retiré : l'animation de couleur du header qui causait un bug flash
     // Animation des liens de navigation
     const navLinks = document.querySelectorAll('nav a');
     navLinks.forEach(link => {

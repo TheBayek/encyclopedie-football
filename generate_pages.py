@@ -128,7 +128,7 @@ for cat, data in categories.items():
 </head>
 <body>
     <header>
-        <h1><span style="font-size: 1.2em; vertical-align: bottom;">⚽</span> Footpédia</h1>
+        <h1><img src="../images/logo.png" alt="Logo Footpédia" class="site-logo"> Footpédia</h1>
         <nav>
             <ul>
                 <li><a href="../index.html">Accueil</a></li>
