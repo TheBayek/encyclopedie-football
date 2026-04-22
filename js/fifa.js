@@ -29,15 +29,16 @@ let joyX = 0, joyY = 0;
 // Fetch DB Progress
 async function fetchProgress() {
     const token = localStorage.getItem('token');
-    if(!token) return 1;
+    if(!token) return maxLevelUnlocked;
     try {
         const res = await fetch('/api/stats/me', { headers: { 'x-auth-token': token } });
         if(res.ok) {
             const data = await res.json();
-            return (data.scores && data.scores.fifa) ? data.scores.fifa + 1 : 1; 
+            let dbLevel = (data.fifa !== undefined) ? data.fifa + 1 : 1;
+            return Math.max(dbLevel, maxLevelUnlocked); 
         }
     } catch(e) { console.error(e); }
-    return 1;
+    return maxLevelUnlocked;
 }
 
 // Envoyer progression API
