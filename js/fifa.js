@@ -343,9 +343,32 @@ function gameLoop() {
         p.y = Math.max(15, Math.min(CH-15, p.y));
     }
 
-    // IA Défenseurs (poursuivent la balle ou son porteur)
+    // IA Défenseurs
+    // 1. Trouver qui est le plus proche de la balle
+    let closestEnemy = null;
+    let minDistEnemy = Infinity;
     for(let e of enemyTeam) {
-        let tx = ball.x; let ty = ball.y;
+        if(e.stunned > 0) { e.stunned--; continue; }
+        let d = Math.hypot(ball.x - e.x, ball.y - e.y);
+        if(d < minDistEnemy) { minDistEnemy = d; closestEnemy = e; }
+    }
+
+    // 2. Comportement des défenseurs
+    for(let i=0; i<enemyTeam.length; i++) {
+        let e = enemyTeam[i];
+        if(e.stunned > 0) continue;
+        
+        let tx = e.x, ty = e.y;
+        if(e === closestEnemy) {
+            // Le plus proche fonce sur la balle
+            tx = ball.x; ty = ball.y;
+        } else {
+            // Les autres se placent en retrait (ligne défensive)
+            tx = CW/2 + (i - enemyTeam.length/2)*80;
+            ty = ball.y - 150; // couvrent la profondeur
+            if(ty < 150) ty = 150;
+        }
+
         let ex = tx - e.x; let ey = ty - e.y;
         let dist = Math.hypot(ex, ey);
         if(dist > 5) {
@@ -353,13 +376,24 @@ function gameLoop() {
             e.y += (ey/dist) * e.speed;
         }
 
-        // Tacle ?
-        if(controlledPlayer && ball.owner === controlledPlayer) {
-            let pDist = Math.hypot(controlledPlayer.x - e.x, controlledPlayer.y - e.y);
+        // Si l'ennemi touche le porteur du ballon (Nous) -> Vol de balle (ou Perdu direct)
+        // Laissons le vol de balle pour créer un vrai jeu de possession
+        if(ball.owner && myTeam.includes(ball.owner)) {
+            let pDist = Math.hypot(ball.owner.x - e.x, ball.owner.y - e.y);
             if(pDist < 20) {
-                endGame(false);
-                return;
+                ball.owner.stunned = 30; // On est assommé
+                controlledPlayer = null;
+                ball.owner = e; // L'ennemi prend la balle !
             }
+        }
+    }
+    
+    // Si l'ennemi porte la balle, il décide de la dégager vers le bas
+    if(ball.owner && enemyTeam.includes(ball.owner)) {
+        if(Math.random() < 0.05) { // Un peu de hasard
+            ball.owner = null;
+            ball.vx = (Math.random()-0.5)*10;
+            ball.vy = 15; // Dégagement vers l'arrière
         }
     }
 
@@ -384,16 +418,44 @@ function gameLoop() {
 
         // Rebond murs latéraux
         if(ball.x < 10 || ball.x > CW-10) ball.vx *= -1;
-        // Rebond ligne de fond alliée
-        if(ball.y > CH-10) ball.vy *= -1;
+        // Rebond ligne de fond alliée (Si la balle descend trop, on a perdu)
+        if(ball.y > CH-10) {
+            endGame(false);
+            return;
+        }
 
         // Ramassage Balle
-        for(let p of myTeam) {
-            if(Math.hypot(p.x - ball.x, p.y - ball.y) < 25) {
-                ball.owner = p;
-                controlledPlayer = p; // Switch automatique au porteur
-                break;
+        let claimed = false;
+        // On vérifie le joueur contrôlé d'abord
+        if(controlledPlayer && !(controlledPlayer.stunned > 0) && Math.hypot(controlledPlayer.x - ball.x, controlledPlayer.y - ball.y) < 25) {
+            ball.owner = controlledPlayer;
+            claimed = true;
+        }
+        if(!claimed) {
+            for(let p of myTeam) {
+                if(!(p.stunned > 0) && Math.hypot(p.x - ball.x, p.y - ball.y) < 25) {
+                    ball.owner = p;
+                    controlledPlayer = p; // Switch automatique
+                    claimed = true;
+                    break;
+                }
             }
+        }
+        if(!claimed) {
+            for(let e of enemyTeam) {
+                if(!(e.stunned > 0) && Math.hypot(e.x - ball.x, e.y - ball.y) < 25) {
+                    ball.owner = e;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Tacle Automatique par joueur contrôlé sur ennemi porteur
+    if(controlledPlayer && ball.owner && enemyTeam.includes(ball.owner)) {
+        if(Math.hypot(controlledPlayer.x - ball.owner.x, controlledPlayer.y - ball.owner.y) < 30) {
+            ball.owner.stunned = 30; // Et bim !
+            ball.owner = controlledPlayer;
         }
     }
 
