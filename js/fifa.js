@@ -122,52 +122,23 @@ function updateJoystick(touch) {
 window.addEventListener("keydown", e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
 window.addEventListener("keyup", e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
 
-// Tirs et Passes (Double clic = Frappe)
-let lastClickTime = 0;
-canvas.addEventListener("click", (e) => {
+// Tirs et Passes (Système de Charge)
+let chargeStartTime = 0;
+let isCharging = false;
+let chargeX = 0, chargeY = 0;
+
+canvas.addEventListener("mousedown", startCharge);
+canvas.addEventListener("touchstart", (e) => { e.preventDefault(); startCharge(e.touches[0] || e); }, {passive: false});
+
+function startCharge(e) {
     if(!isPlaying || !controlledPlayer) return;
-    let rect = canvas.getBoundingClientRect();
-    let cx = e.clientX - rect.left;
-    let cy = e.clientY - rect.top;
     
-    let now = Date.now();
-    let isDoubleClick = (now - lastClickTime < 300);
-    lastClickTime = now;
-
-    // Si on a la balle
-    if(ball.owner === controlledPlayer) {
-        let dx = cx - controlledPlayer.x;
-        let dy = cy - controlledPlayer.y;
-        let dist = Math.hypot(dx, dy);
-        let dirX = dx/dist; let dirY = dy/dist;
-
-        if(isDoubleClick) {
-            // FRAPPE Puissante
-            ball.owner = null;
-            ball.vx = dirX * 15;
-            ball.vy = dirY * 15;
-        } else {
-            // PASSE
-            // Chercher le coéquipier le plus proche du clic
-            let bestMate = null;
-            let minDist = 9999;
-            for(let p of myTeam) {
-                if(p === controlledPlayer) continue;
-                let d = Math.hypot(p.x - cx, p.y - cy);
-                if(d < minDist) { minDist = d; bestMate = p; }
-            }
-            if(bestMate) {
-                ball.owner = null;
-                // Calcul direction vers coéquipier
-                let px = bestMate.x - controlledPlayer.x;
-                let py = bestMate.y - controlledPlayer.y;
-                let pd = Math.hypot(px, py);
-                ball.vx = (px/pd) * 10;
-                ball.vy = (py/pd) * 10;
-                controlledPlayer = bestMate; // Switch auto
-            }
-        }
-    } else {
+    // Tacle direct (sans charge) si pas la balle
+    if(ball.owner !== controlledPlayer) {
+        let rect = canvas.getBoundingClientRect();
+        let cx = e.clientX - rect.left;
+        let cy = e.clientY - rect.top;
+        
         // Tacle manuel
         let clickedEnemy = null;
         for(let e of enemyTeam) {
@@ -182,14 +153,67 @@ canvas.addEventListener("click", (e) => {
                 if(ball.owner === clickedEnemy) {
                     ball.owner = controlledPlayer;
                 } else {
-                    // Stun l'ennemi temporairement
                     clickedEnemy.speed = 0;
                     setTimeout(() => { clickedEnemy.speed = 2 + currentLevel * 0.5; }, 2000);
                 }
             }
         }
+        return;
     }
-});
+
+    // Sinon, on démarre la charge pour une passe/tir
+    chargeStartTime = Date.now();
+    isCharging = true;
+}
+
+canvas.addEventListener("mouseup", endCharge);
+canvas.addEventListener("touchend", (e) => { e.preventDefault(); endCharge(e.changedTouches[0] || e); }, {passive: false});
+
+function endCharge(e) {
+    if(!isPlaying || !controlledPlayer || !isCharging) return;
+    isCharging = false;
+
+    let rect = canvas.getBoundingClientRect();
+    let cx = e.clientX - rect.left;
+    let cy = e.clientY - rect.top;
+
+    if(ball.owner === controlledPlayer) {
+        let duration = Date.now() - chargeStartTime;
+        let dx = cx - controlledPlayer.x;
+        let dy = cy - controlledPlayer.y;
+        let dist = Math.hypot(dx, dy);
+        let dirX = dx/dist; let dirY = dy/dist;
+
+        if(duration > 400) {
+            // FRAPPE Puissante (Charge)
+            // ex: 5 secondes (5000ms) = Vitesse 25
+            let speed = 8 + (duration / 5000) * 20; 
+            if(speed > 28) speed = 28; // Max limit
+            
+            ball.owner = null;
+            ball.vx = dirX * speed;
+            ball.vy = dirY * speed;
+        } else {
+            // PASSE Douce (Clic rapide)
+            let bestMate = null;
+            let minDist = 9999;
+            for(let p of myTeam) {
+                if(p === controlledPlayer) continue;
+                let d = Math.hypot(p.x - cx, p.y - cy);
+                if(d < minDist) { minDist = d; bestMate = p; }
+            }
+            if(bestMate) {
+                ball.owner = null;
+                let px = bestMate.x - controlledPlayer.x;
+                let py = bestMate.y - controlledPlayer.y;
+                let pd = Math.hypot(px, py);
+                ball.vx = (px/pd) * 8;
+                ball.vy = (py/pd) * 8;
+                controlledPlayer = bestMate; 
+            }
+        }
+    }
+}
 
 // Pour les boutons mobiles
 document.getElementById("btnShoot").addEventListener("touchstart", (e) => {
@@ -491,6 +515,16 @@ function gameLoop() {
 
     // Dessin Balle
     ctx.fillText("⚽", ball.x, ball.y);
+
+    // Dessin de la jauge de charge (si on charge)
+    if(isCharging && controlledPlayer) {
+        let duration = Date.now() - chargeStartTime;
+        let powerRatio = Math.min(1, duration / 5000); // Max 5s
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(controlledPlayer.x - 20, controlledPlayer.y - 30, 40, 6);
+        ctx.fillStyle = powerRatio < 0.3 ? "cyan" : (powerRatio < 0.7 ? "yellow" : "red");
+        ctx.fillRect(controlledPlayer.x - 20, controlledPlayer.y - 30, 40 * powerRatio, 6);
+    }
 
     gameLoopId = requestAnimationFrame(gameLoop);
 }
