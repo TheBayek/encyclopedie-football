@@ -548,7 +548,7 @@ if(gardienCanvas) {
         for(let i=balls.length-1; i>=0; i--) {
             let b = balls[i];
             let dist = Math.hypot(b.x - mx, b.y - my);
-            if(dist < 50) {
+            if(dist < 80) {
                 balls.splice(i, 1);
                 score++;
                 break; // only catch one per click
@@ -576,7 +576,7 @@ if(gardienCanvas) {
         for(let i=balls.length-1; i>=0; i--) {
             let b = balls[i];
             let dist = Math.hypot(b.x - mx, b.y - my);
-            if(dist < 50) {
+            if(dist < 80) {
                 balls.splice(i, 1);
                 score++;
                 break; // only catch one per click
