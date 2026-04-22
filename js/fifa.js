@@ -24,6 +24,7 @@ let myTeam = [];
 let enemyTeam = [];
 let controlledPlayer = null;
 let enemyGoalie = null;
+let myGoalie = null;
 
 // Inputs
 let keys = { w:false, a:false, s:false, d:false, z:false, q:false, ArrowUp:false, ArrowLeft:false, ArrowDown:false, ArrowRight:false };
@@ -275,6 +276,7 @@ function launchGame(level) {
         enemyTeam.push({ x: WORLD_W/2 + (Math.random()-0.5)*WORLD_W*0.6, y: 150 + Math.random()*WORLD_H*0.4, color: "red", speed: 2 + currentLevel*0.5 });
     }
     enemyGoalie = { x: WORLD_W/2, y: 50, color: "yellow", speed: 3 + currentLevel };
+    myGoalie = { x: WORLD_W/2, y: WORLD_H - 50, color: "lightgreen", speed: 4 };
 
     ball.x = WORLD_W/2; ball.y = WORLD_H/2 + 200; ball.vx = 0; ball.vy = 0; ball.owner = null;
 
@@ -471,12 +473,21 @@ function gameLoop() {
         }
     }
 
-    // IA Gardien
+    // IA Gardien Ennemi
     if(Math.abs(ball.x - enemyGoalie.x) > 5) {
         enemyGoalie.x += Math.sign(ball.x - enemyGoalie.x) * enemyGoalie.speed;
     }
-    // Collisions gardien (arrêts)
+    // Collisions gardien ennemi (arrêts)
     if(!enemyTeam.includes(ball.owner) && Math.hypot(ball.x - enemyGoalie.x, ball.y - enemyGoalie.y) < 30) {
+        ball.vx *= -1; ball.vy *= -1; ball.owner = null;
+    }
+
+    // IA Gardien Allié
+    if(Math.abs(ball.x - myGoalie.x) > 5) {
+        myGoalie.x += Math.sign(ball.x - myGoalie.x) * myGoalie.speed;
+    }
+    // Collisions gardien allié (arrêts inverses)
+    if(!myTeam.includes(ball.owner) && Math.hypot(ball.x - myGoalie.x, ball.y - myGoalie.y) < 30) {
         ball.vx *= -1; ball.vy *= -1; ball.owner = null;
     }
 
@@ -559,9 +570,11 @@ function gameLoop() {
         ctx.beginPath(); ctx.arc(e.x, e.y, 15, 0, Math.PI*2); ctx.fill();
     }
 
-    // Gardien
+    // Gardiens
     ctx.fillStyle = "yellow";
     ctx.fillRect(enemyGoalie.x - 15, enemyGoalie.y - 15, 30, 30);
+    ctx.fillStyle = "lightgreen";
+    ctx.fillRect(myGoalie.x - 15, myGoalie.y - 15, 30, 30);
 
     // Dessin Balle
     ctx.fillText("⚽", ball.x, ball.y);
