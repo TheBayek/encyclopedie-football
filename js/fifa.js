@@ -13,6 +13,9 @@ let isPlaying = false;
 
 // Config Terrain
 let CW, CH;
+const WORLD_W = 1200;
+const WORLD_H = 1800;
+let camX = 0, camY = 0;
 const GOAL_WIDTH = 150;
 
 // Entités
@@ -137,8 +140,8 @@ function startCharge(e) {
     // Tacle direct (sans charge) si pas la balle
     if(ball.owner !== controlledPlayer) {
         let rect = canvas.getBoundingClientRect();
-        let cx = e.clientX - rect.left;
-        let cy = e.clientY - rect.top;
+        let cx = e.clientX - rect.left + camX;
+        let cy = e.clientY - rect.top + camY;
         
         // Tacle manuel
         let clickedEnemy = null;
@@ -175,8 +178,8 @@ function endCharge(e) {
     isCharging = false;
 
     let rect = canvas.getBoundingClientRect();
-    let cx = e.clientX - rect.left;
-    let cy = e.clientY - rect.top;
+    let cx = e.clientX - rect.left + camX;
+    let cy = e.clientY - rect.top + camY;
 
     if(ball.owner === controlledPlayer) {
         let duration = Date.now() - chargeStartTime;
@@ -262,18 +265,18 @@ function launchGame(level) {
     enemyTeam = [];
     
     // Spawn Team Bleue (3 joueurs)
-    myTeam.push({ x: CW/2, y: CH - 100, color: "blue", speed: 5 });
-    myTeam.push({ x: CW/2 - 100, y: CH - 200, color: "blue", speed: 4.5 });
-    myTeam.push({ x: CW/2 + 100, y: CH - 200, color: "blue", speed: 4.5 });
+    myTeam.push({ x: WORLD_W/2, y: WORLD_H - 200, color: "blue", speed: 5 });
+    myTeam.push({ x: WORLD_W/2 - 100, y: WORLD_H - 350, color: "blue", speed: 4.5 });
+    myTeam.push({ x: WORLD_W/2 + 100, y: WORLD_H - 350, color: "blue", speed: 4.5 });
     controlledPlayer = myTeam[0];
 
     // Spawn Team Rouge en fonction du niveau
     for(let i=0; i<currentLevel + 1; i++) {
-        enemyTeam.push({ x: CW/2 + (Math.random()-0.5)*CW*0.8, y: 150 + Math.random()*CH/2, color: "red", speed: 2 + currentLevel*0.5 });
+        enemyTeam.push({ x: WORLD_W/2 + (Math.random()-0.5)*WORLD_W*0.6, y: 150 + Math.random()*WORLD_H*0.4, color: "red", speed: 2 + currentLevel*0.5 });
     }
-    enemyGoalie = { x: CW/2, y: 50, color: "yellow", speed: 3 + currentLevel };
+    enemyGoalie = { x: WORLD_W/2, y: 50, color: "yellow", speed: 3 + currentLevel };
 
-    ball.x = CW/2; ball.y = CH/2; ball.vx = 0; ball.vy = 0; ball.owner = null;
+    ball.x = WORLD_W/2; ball.y = WORLD_H/2 + 200; ball.vx = 0; ball.vy = 0; ball.owner = null;
 
     if(gameLoopId) cancelAnimationFrame(gameLoopId);
     gameLoop();
@@ -303,24 +306,54 @@ function endGame(win) {
 
 function drawPitch() {
     ctx.fillStyle = "#27ae60"; // Gazon
-    ctx.fillRect(0,0,CW,CH);
+    ctx.fillRect(0,0,WORLD_W,WORLD_H);
     // Lignes blanches
     ctx.strokeStyle = "rgba(255,255,255,0.5)";
     ctx.lineWidth = 4;
     // Ligne médiane
-    ctx.beginPath(); ctx.moveTo(0, CH/2); ctx.lineTo(CW, CH/2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, WORLD_H/2); ctx.lineTo(WORLD_W, WORLD_H/2); ctx.stroke();
     // Rond central
-    ctx.beginPath(); ctx.arc(CW/2, CH/2, 60, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(WORLD_W/2, WORLD_H/2, 60, 0, Math.PI*2); ctx.stroke();
     // Surface réparation Ennemie
-    ctx.strokeRect(CW/2 - 150, 0, 300, 150);
+    ctx.strokeRect(WORLD_W/2 - 150, 0, 300, 150);
     // But Ennemi
     ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.fillRect(CW/2 - GOAL_WIDTH/2, 0, GOAL_WIDTH, 20);
+    ctx.fillRect(WORLD_W/2 - GOAL_WIDTH/2, 0, GOAL_WIDTH, 20);
 }
 
 function gameLoop() {
     if(!isPlaying) return;
     
+    // Remplir le fond hors monde
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0,0,CW,CH);
+
+    // Calcul de la caméra
+    let targetCamX, targetCamY;
+    if(controlledPlayer) {
+        targetCamX = controlledPlayer.x - CW/2;
+        targetCamY = controlledPlayer.y - CH/2;
+    } else {
+        targetCamX = ball.x - CW/2;
+        targetCamY = ball.y - CH/2;
+    }
+    
+    camX += (targetCamX - camX) * 0.1; // Smooth camera
+    camY += (targetCamY - camY) * 0.1;
+    
+    let maxCamX = Math.max(0, WORLD_W - CW);
+    let maxCamY = Math.max(0, WORLD_H - CH);
+
+    camX = Math.max(0, Math.min(maxCamX, camX));
+    camY = Math.max(0, Math.min(maxCamY, camY));
+
+    // Si l'écran est plus grand que le terrain, on centre
+    if(CW > WORLD_W) camX = -(CW - WORLD_W)/2;
+    if(CH > WORLD_H) camY = -(CH - WORLD_H)/2;
+
+    ctx.save();
+    ctx.translate(-camX, -camY);
+
     drawPitch();
 
     // Mouvements Joueur Actif
@@ -344,8 +377,8 @@ function gameLoop() {
         controlledPlayer.y += dy * controlledPlayer.speed;
 
         // Frontières
-        controlledPlayer.x = Math.max(15, Math.min(CW-15, controlledPlayer.x));
-        controlledPlayer.y = Math.max(15, Math.min(CH-15, controlledPlayer.y));
+        controlledPlayer.x = Math.max(15, Math.min(WORLD_W-15, controlledPlayer.x));
+        controlledPlayer.y = Math.max(15, Math.min(WORLD_H-15, controlledPlayer.y));
     }
 
     // Dessin Joueurs AI Bleus
@@ -364,8 +397,8 @@ function gameLoop() {
             p.x += (dxAI/dAI) * (p.speed * 0.5);
             p.y += (dyAI/dAI) * (p.speed * 0.5);
         }
-        p.x = Math.max(15, Math.min(CW-15, p.x));
-        p.y = Math.max(15, Math.min(CH-15, p.y));
+        p.x = Math.max(15, Math.min(WORLD_W-15, p.x));
+        p.y = Math.max(15, Math.min(WORLD_H-15, p.y));
     }
 
     // IA Défenseurs
@@ -452,9 +485,9 @@ function gameLoop() {
         ball.vy *= 0.96;
 
         // Rebond murs latéraux
-        if(ball.x < 10 || ball.x > CW-10) ball.vx *= -1;
+        if(ball.x < 10 || ball.x > WORLD_W-10) ball.vx *= -1;
         // Rebond ligne de fond alliée (Si la balle descend trop, on a perdu)
-        if(ball.y > CH-10) {
+        if(ball.y > WORLD_H-10) {
             endGame(false);
             return;
         }
@@ -495,7 +528,7 @@ function gameLoop() {
     }
 
     // Condition Victoire (BUT)
-    if(ball.y <= 20 && ball.x > CW/2 - GOAL_WIDTH/2 && ball.x < CW/2 + GOAL_WIDTH/2) {
+    if(ball.y <= 20 && ball.x > WORLD_W/2 - GOAL_WIDTH/2 && ball.x < WORLD_W/2 + GOAL_WIDTH/2) {
         endGame(true);
         return;
     }
@@ -536,6 +569,8 @@ function gameLoop() {
         ctx.fillStyle = powerRatio < 0.3 ? "cyan" : (powerRatio < 0.7 ? "yellow" : "red");
         ctx.fillRect(controlledPlayer.x - 20, controlledPlayer.y - 30, 40 * powerRatio, 6);
     }
+    
+    ctx.restore();
 
     gameLoopId = requestAnimationFrame(gameLoop);
 }
