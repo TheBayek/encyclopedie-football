@@ -23,7 +23,7 @@ let controlledPlayer = null;
 let enemyGoalie = null;
 
 // Inputs
-let keys = { w:false, a:false, s:false, d:false, ArrowUp:false, ArrowLeft:false, ArrowDown:false, ArrowRight:false };
+let keys = { w:false, a:false, s:false, d:false, z:false, q:false, ArrowUp:false, ArrowLeft:false, ArrowDown:false, ArrowRight:false };
 let joyX = 0, joyY = 0;
 
 // Fetch DB Progress
@@ -300,9 +300,9 @@ function gameLoop() {
 
     // Mouvements Joueur Actif
     let dx = 0, dy = 0;
-    if(keys.w || keys.ArrowUp) dy -= 1;
+    if(keys.w || keys.z || keys.ArrowUp) dy -= 1;
     if(keys.s || keys.ArrowDown) dy += 1;
-    if(keys.a || keys.ArrowLeft) dx -= 1;
+    if(keys.a || keys.q || keys.ArrowLeft) dx -= 1;
     if(keys.d || keys.ArrowRight) dx += 1;
     
     // Combinaison clavier + joystick
