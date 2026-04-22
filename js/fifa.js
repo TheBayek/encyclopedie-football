@@ -374,6 +374,11 @@ function gameLoop() {
     let minDistEnemy = Infinity;
     for(let e of enemyTeam) {
         if(e.stunned > 0) { e.stunned--; continue; }
+        if(ball.owner === e) {
+            closestEnemy = e;
+            minDistEnemy = 0;
+            break;
+        }
         let d = Math.hypot(ball.x - e.x, ball.y - e.y);
         if(d < minDistEnemy) { minDistEnemy = d; closestEnemy = e; }
     }
@@ -385,8 +390,13 @@ function gameLoop() {
         
         let tx = e.x, ty = e.y;
         if(e === closestEnemy) {
-            // Le plus proche fonce sur la balle
-            tx = ball.x; ty = ball.y;
+            if (ball.owner === e) {
+                // Fonce vers notre ligne de fond
+                tx = e.x; ty = CH;
+            } else {
+                // Le plus proche fonce sur la balle
+                tx = ball.x; ty = ball.y;
+            }
         } else {
             // Les autres se placent en retrait (ligne défensive)
             tx = CW/2 + (i - enemyTeam.length/2)*80;
@@ -427,7 +437,7 @@ function gameLoop() {
         enemyGoalie.x += Math.sign(ball.x - enemyGoalie.x) * enemyGoalie.speed;
     }
     // Collisions gardien (arrêts)
-    if(Math.hypot(ball.x - enemyGoalie.x, ball.y - enemyGoalie.y) < 30) {
+    if(!enemyTeam.includes(ball.owner) && Math.hypot(ball.x - enemyGoalie.x, ball.y - enemyGoalie.y) < 30) {
         ball.vx *= -1; ball.vy *= -1; ball.owner = null;
     }
 
