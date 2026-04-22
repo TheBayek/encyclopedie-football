@@ -284,7 +284,7 @@ function launchGame(level) {
     gameLoop();
 }
 
-function endGame(win) {
+function endGame(win, isEnemyGoal = false) {
     isPlaying = false;
     ctx.fillStyle = "rgba(0,0,0,0.8)";
     ctx.fillRect(0,0,CW,CH);
@@ -298,7 +298,11 @@ function endGame(win) {
         unlockNextLevel();
     } else {
         ctx.fillStyle = "red";
-        ctx.fillText("TACCLÉ ! PERDU 💥", CW/2, CH/2);
+        if (isEnemyGoal) {
+            ctx.fillText("BUT ENCAISSÉ ! PERDU 💥", CW/2, CH/2);
+        } else {
+            ctx.fillText("FIN DU MATCH", CW/2, CH/2);
+        }
     }
     
     setTimeout(() => {
@@ -433,7 +437,7 @@ function gameLoop() {
         if(e === closestEnemy) {
             if (ball.owner === e) {
                 // Fonce vers notre ligne de fond
-                tx = e.x; ty = CH;
+                tx = WORLD_W/2; ty = WORLD_H;
             } else {
                 // Le plus proche fonce sur la balle
                 tx = ball.x; ty = ball.y;
@@ -502,12 +506,11 @@ function gameLoop() {
         ball.vy *= 0.96;
 
         // Rebond murs latéraux
-        if(ball.x < 10 || ball.x > WORLD_W-10) ball.vx *= -1;
-        // Rebond ligne de fond alliée (Si la balle descend trop, on a perdu)
-        if(ball.y > WORLD_H-10) {
-            endGame(false);
-            return;
-        }
+        if(ball.x < 10) { ball.x = 10; ball.vx *= -1; }
+        if(ball.x > WORLD_W-10) { ball.x = WORLD_W-10; ball.vx *= -1; }
+        // Rebond haut et bas
+        if(ball.y < 10) { ball.y = 10; ball.vy *= -1; }
+        if(ball.y > WORLD_H-10) { ball.y = WORLD_H-10; ball.vy *= -1; }
 
         // Ramassage Balle
         let claimed = false;
@@ -547,6 +550,11 @@ function gameLoop() {
     // Condition Victoire (BUT)
     if(ball.y <= 20 && ball.x > WORLD_W/2 - GOAL_WIDTH/2 && ball.x < WORLD_W/2 + GOAL_WIDTH/2) {
         endGame(true);
+        return;
+    }
+    // Condition Défaite (BUT ENNEMI)
+    if(ball.y >= WORLD_H - 20 && ball.x > WORLD_W/2 - GOAL_WIDTH/2 && ball.x < WORLD_W/2 + GOAL_WIDTH/2) {
+        endGame(false, true);
         return;
     }
 
