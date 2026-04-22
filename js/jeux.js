@@ -57,6 +57,16 @@ if(dribbleCanvas) {
         player.y = (e.clientY - rect.top) * scaleY;
     });
 
+    dribbleCanvas.addEventListener("touchmove", (e) => {
+        e.preventDefault();
+        const rect = dribbleCanvas.getBoundingClientRect();
+        const scaleX = LOGICAL_W / rect.width;
+        const scaleY = LOGICAL_H / rect.height;
+        let touch = e.touches[0];
+        player.x = (touch.clientX - rect.left) * scaleX;
+        player.y = (touch.clientY - rect.top) * scaleY;
+    }, { passive: false });
+
     function spawnDefender() {
         let x = Math.random() * dribbleCanvas.width;
         defenders.push({ x: x, y: -30, speed: Math.random() * 4 + 3 });
@@ -171,6 +181,21 @@ if(dribbleCanvas) {
             updateGame();
         }
     });
+
+    dribbleCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); 
+        if(!hasStarted) {
+            hasStarted = true;
+            updateGame();
+        } else if(isGameOver || isVictory) {
+            isGameOver = false;
+            isVictory = false;
+            defenders = [];
+            score = 0;
+            frame = 0;
+            player = { x: 300, y: 400, radius: 15 };
+            updateGame();
+        }
+    }, {passive: false});
 
     showStartScreen();
 }
@@ -297,6 +322,17 @@ if(penaltyCanvas) {
         }
     });
 
+    penaltyCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); 
+        if(!hasStartedPenalty) {
+            hasStartedPenalty = true;
+            updatePenaltyGame();
+        } else if(isGoal || isMissed) {
+            resetPenalty();
+        } else if (!isShooting) {
+            isShooting = true;
+        }
+    }, {passive: false});
+
     showStartScreenPenalty();
 }
 
@@ -383,6 +419,33 @@ if(jonglesCanvas) {
             score++;
         }
     });
+
+    jonglesCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); let ev = e.touches[0]; Object.defineProperty(ev, 'offsetX', {get: () => ev.clientX - jonglesCanvas.getBoundingClientRect().left}); Object.defineProperty(ev, 'offsetY', {get: () => ev.clientY - jonglesCanvas.getBoundingClientRect().top}); let originalE = e; e = ev; 
+        if(!hasStarted) {
+            hasStarted = true;
+            drawJongles();
+            return;
+        }
+        if(isGameOver) {
+            resetJongles();
+            drawJongles();
+            return;
+        }
+        const rect = jonglesCanvas.getBoundingClientRect();
+        const scaleX = LOGICAL_W / rect.width;
+        const scaleY = LOGICAL_H / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
+        const dist = Math.hypot(ball.x - mx, ball.y - my);
+        if(dist < ball.radius * 2) { // Give a nice hit box
+            ball.vy = -12; // upward bump
+            // Add some horizontal randomness
+            ball.x += (Math.random() - 0.5) * 40;
+            // keep inside bounds
+            ball.x = Math.max(50, Math.min(550, ball.x));
+            score++;
+        }
+    }, {passive: false});
 
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0,0, jonglesCanvas.width, jonglesCanvas.height);
@@ -492,6 +555,34 @@ if(gardienCanvas) {
             }
         }
     });
+
+    gardienCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); let ev = e.touches[0]; Object.defineProperty(ev, 'offsetX', {get: () => ev.clientX - gardienCanvas.getBoundingClientRect().left}); Object.defineProperty(ev, 'offsetY', {get: () => ev.clientY - gardienCanvas.getBoundingClientRect().top}); let originalE = e; e = ev; 
+        if(!hasStarted) {
+            hasStarted = true;
+            drawGardien();
+            return;
+        }
+        if(isGameOver) {
+            resetGardien();
+            drawGardien();
+            return;
+        }
+        const rect = gardienCanvas.getBoundingClientRect();
+        const scaleX = LOGICAL_W / rect.width;
+        const scaleY = LOGICAL_H / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
+        
+        for(let i=balls.length-1; i>=0; i--) {
+            let b = balls[i];
+            let dist = Math.hypot(b.x - mx, b.y - my);
+            if(dist < 50) {
+                balls.splice(i, 1);
+                score++;
+                break; // only catch one per click
+            }
+        }
+    }, {passive: false});
 
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0,0, gardienCanvas.width, gardienCanvas.height);
@@ -605,6 +696,18 @@ if(flappyCanvas) {
         }
     });
 
+    flappyCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); 
+        if(!hasStarted) {
+            hasStarted = true;
+            drawFlappy();
+        } else if(isGameOver) {
+            resetFlappy();
+            drawFlappy();
+        } else {
+            ballV = -7;
+        }
+    }, {passive: false});
+
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0,0, flappyCanvas.width, flappyCanvas.height);
     ctx.fillStyle = "white";
@@ -688,12 +791,26 @@ if(pongCanvas) {
         playerY = Math.max(0, Math.min(320, playerY));
     });
 
+    pongCanvas.addEventListener("touchmove", (e) => { e.preventDefault(); let ev = e.touches[0]; ev.clientY = ev.clientY; let originalE = e; e = ev; 
+        const rect = pongCanvas.getBoundingClientRect();
+        const scaleY = LOGICAL_H / rect.height;
+        playerY = (e.clientY - rect.top) * scaleY - 40; // center paddle
+        playerY = Math.max(0, Math.min(320, playerY));
+    }, {passive: false});
+
     pongCanvas.addEventListener("mousedown", () => {
         if(!hasStarted) {
             hasStarted = true;
             drawPong();
         }
     });
+
+    pongCanvas.addEventListener("touchstart", (e) => { e.preventDefault(); 
+        if(!hasStarted) {
+            hasStarted = true;
+            drawPong();
+        }
+    }, {passive: false});
 
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     ctx.fillRect(0,0, pongCanvas.width, pongCanvas.height);
