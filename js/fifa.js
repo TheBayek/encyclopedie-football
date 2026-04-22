@@ -31,7 +31,7 @@ async function fetchProgress() {
     const token = localStorage.getItem('token');
     if(!token) return 1;
     try {
-        const res = await fetch('/api/auth/me', { headers: { 'x-auth-token': token } });
+        const res = await fetch('/api/stats/me', { headers: { 'x-auth-token': token } });
         if(res.ok) {
             const data = await res.json();
             return (data.scores && data.scores.fifa) ? data.scores.fifa + 1 : 1; 
@@ -46,7 +46,7 @@ async function unlockNextLevel() {
         maxLevelUnlocked = currentLevel + 1;
         const token = localStorage.getItem('token');
         if(token) {
-            fetch('/api/stats/update', {
+            await fetch('/api/stats/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-auth-token': token },
                 body: JSON.stringify({ game: 'fifa', score: currentLevel })
