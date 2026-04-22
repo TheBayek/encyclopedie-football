@@ -10,7 +10,8 @@ const UserSchema = new mongoose.Schema({
         jongles: { type: Number, default: 0 },
         gardien: { type: Number, default: 0 },
         flappy: { type: Number, default: 0 },
-        pong: { type: Number, default: 0 }
+        pong: { type: Number, default: 0 },
+        fifa: { type: Number, default: 0 }
     },
     date: { type: Date, default: Date.now }
 });
