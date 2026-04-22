@@ -319,6 +319,12 @@ function drawPitch() {
     // But Ennemi
     ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
     ctx.fillRect(WORLD_W/2 - GOAL_WIDTH/2, 0, GOAL_WIDTH, 20);
+
+    // Surface réparation Alliée
+    ctx.strokeRect(WORLD_W/2 - 150, WORLD_H - 150, 300, 150);
+    // But Allié
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillRect(WORLD_W/2 - GOAL_WIDTH/2, WORLD_H - 20, GOAL_WIDTH, 20);
 }
 
 function gameLoop() {
