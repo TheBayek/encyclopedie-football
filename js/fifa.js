@@ -63,11 +63,11 @@ async function unlockNextLevel() {
 // Initialisation Menu
 async function initMenu() {
     maxLevelUnlocked = await fetchProgress();
-    // Limite max level 5
-    if(maxLevelUnlocked > 5) maxLevelUnlocked = 5;
+    // Limite max level 50
+    if(maxLevelUnlocked > 50) maxLevelUnlocked = 50;
     
     levelsGrid.innerHTML = "";
-    for(let i=1; i<=5; i++) {
+    for(let i=1; i<=50; i++) {
         let btn = document.createElement("button");
         btn.className = "level-btn " + (i <= maxLevelUnlocked ? "unlocked" : "locked");
         btn.innerHTML = i <= maxLevelUnlocked ? `Niveau ${i}` : `🔒 Niv ${i}`;
@@ -276,11 +276,14 @@ function launchGame(level) {
     myTeam.push({ x: WORLD_W/2 + 100, y: WORLD_H - 350, color: "blue", speed: 4.5 });
     controlledPlayer = myTeam[0];
 
-    // Spawn Team Rouge en fonction du niveau
-    for(let i=0; i<currentLevel + 1; i++) {
-        enemyTeam.push({ x: WORLD_W/2 + (Math.random()-0.5)*WORLD_W*0.6, y: 150 + Math.random()*WORLD_H*0.4, color: "red", speed: 2 + currentLevel*0.5 });
+    // Spawn Team Rouge en fonction du niveau (Max 11 joueurs)
+    let nbEnemies = Math.min(11, currentLevel + 1);
+    let enemySpeed = Math.min(5.5, 2 + currentLevel * 0.15);
+    for(let i=0; i<nbEnemies; i++) {
+        enemyTeam.push({ x: WORLD_W/2 + (Math.random()-0.5)*WORLD_W*0.6, y: 150 + Math.random()*WORLD_H*0.4, color: "red", speed: enemySpeed });
     }
-    enemyGoalie = { x: WORLD_W/2, y: 50, color: "yellow", speed: 3 + currentLevel };
+    let goalieSpeed = Math.min(7, 3 + currentLevel * 0.2);
+    enemyGoalie = { x: WORLD_W/2, y: 50, color: "yellow", speed: goalieSpeed };
     myGoalie = { x: WORLD_W/2, y: WORLD_H - 50, color: "lightgreen", speed: 4 };
 
     ball.x = WORLD_W/2; ball.y = WORLD_H/2 + 200; ball.vx = 0; ball.vy = 0; ball.owner = null;
@@ -466,7 +469,7 @@ function gameLoop() {
         if(ball.owner && myTeam.includes(ball.owner)) {
             let pDist = Math.hypot(ball.owner.x - e.x, ball.owner.y - e.y);
             if(pDist < 20) {
-                ball.owner.stunned = 15; // On est assommé (15 frames = 0.25s)
+                ball.owner.stunned = 5; // On est assommé (5 frames = quasi instant)
                 controlledPlayer = null;
                 ball.owner = e; // L'ennemi prend la balle !
             }
@@ -549,7 +552,7 @@ function gameLoop() {
     // Tacle Automatique par joueur contrôlé sur ennemi porteur
     if(controlledPlayer && ball.owner && enemyTeam.includes(ball.owner)) {
         if(Math.hypot(controlledPlayer.x - ball.owner.x, controlledPlayer.y - ball.owner.y) < 30) {
-            ball.owner.stunned = 15; // Et bim ! (15 frames = 0.25s)
+            ball.owner.stunned = 5; // Et bim ! (5 frames)
             ball.owner = controlledPlayer;
         }
     }
