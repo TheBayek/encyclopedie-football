@@ -155,8 +155,9 @@ function startCharge(e) {
             let distToEnemy = Math.hypot(controlledPlayer.x - clickedEnemy.x, controlledPlayer.y - clickedEnemy.y);
             if(distToEnemy < 60) {
                 // Tacle réussi
-                if(ball.owner === clickedEnemy) {
+                if(ball.owner === clickedEnemy && !(clickedEnemy.tackleImmunity > 0)) {
                     ball.owner = controlledPlayer;
+                    controlledPlayer.tackleImmunity = 30; // Immunité pour reculer
                 } else {
                     clickedEnemy.speed = 0;
                     setTimeout(() => { clickedEnemy.speed = 2 + currentLevel * 0.5; }, 2000);
@@ -344,6 +345,10 @@ function drawPitch() {
 function gameLoop() {
     if(!isPlaying) return;
     
+    // Decrement immunities
+    for(let p of myTeam) if(p.tackleImmunity > 0) p.tackleImmunity--;
+    for(let e of enemyTeam) if(e.tackleImmunity > 0) e.tackleImmunity--;
+
     // Remplir le fond hors monde
     ctx.fillStyle = "#111";
     ctx.fillRect(0,0,CW,CH);
@@ -468,10 +473,11 @@ function gameLoop() {
         // Laissons le vol de balle pour créer un vrai jeu de possession
         if(ball.owner && myTeam.includes(ball.owner)) {
             let pDist = Math.hypot(ball.owner.x - e.x, ball.owner.y - e.y);
-            if(pDist < 20) {
+            if(pDist < 20 && !(ball.owner.tackleImmunity > 0)) {
                 ball.owner.stunned = 5; // On est assommé (5 frames = quasi instant)
-                controlledPlayer = null;
+                // controlledPlayer = null; <-- SUPPRIMÉ ! On ne meurt plus
                 ball.owner = e; // L'ennemi prend la balle !
+                e.tackleImmunity = 30; // L'ennemi est immunisé au tacle pdt 0.5s
             }
         }
     }
@@ -550,10 +556,11 @@ function gameLoop() {
     }
     
     // Tacle Automatique par joueur contrôlé sur ennemi porteur
-    if(controlledPlayer && ball.owner && enemyTeam.includes(ball.owner)) {
+    if(controlledPlayer && ball.owner && enemyTeam.includes(ball.owner) && !(ball.owner.tackleImmunity > 0)) {
         if(Math.hypot(controlledPlayer.x - ball.owner.x, controlledPlayer.y - ball.owner.y) < 30) {
             ball.owner.stunned = 5; // Et bim ! (5 frames)
             ball.owner = controlledPlayer;
+            controlledPlayer.tackleImmunity = 30; // On est immunisé au tacle pdt 0.5s
         }
     }
 
