@@ -461,7 +461,7 @@ function gameLoop() {
         if(ball.owner && myTeam.includes(ball.owner)) {
             let pDist = Math.hypot(ball.owner.x - e.x, ball.owner.y - e.y);
             if(pDist < 20) {
-                ball.owner.stunned = 30; // On est assommé
+                ball.owner.stunned = 15; // On est assommé (15 frames = 0.25s)
                 controlledPlayer = null;
                 ball.owner = e; // L'ennemi prend la balle !
             }
@@ -498,7 +498,7 @@ function gameLoop() {
     // Mouvement Balle
     if(ball.owner) {
         ball.x = ball.owner.x;
-        ball.y = ball.owner.y - 15; // Balle devant au pied
+        ball.y = ball.owner.y; // Balle au centre du joueur
     } else {
         ball.x += ball.vx;
         ball.y += ball.vy;
@@ -542,7 +542,7 @@ function gameLoop() {
     // Tacle Automatique par joueur contrôlé sur ennemi porteur
     if(controlledPlayer && ball.owner && enemyTeam.includes(ball.owner)) {
         if(Math.hypot(controlledPlayer.x - ball.owner.x, controlledPlayer.y - ball.owner.y) < 30) {
-            ball.owner.stunned = 30; // Et bim !
+            ball.owner.stunned = 15; // Et bim ! (15 frames = 0.25s)
             ball.owner = controlledPlayer;
         }
     }
