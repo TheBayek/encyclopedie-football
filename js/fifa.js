@@ -221,7 +221,7 @@ function endCharge(e) {
                 ball.cooldown = 15;
                 ball.vx = dirX * speed;
                 ball.vy = dirY * speed;
-                ball.vz = speed * 0.4; // Lob auto au drag
+                ball.vz = speed * 0.3; // Lob réduit pour éviter les lobs cheatés de bout en bout
             } else if(dist > 10) {
                 // Passe douce
                 ball.owner = null;
@@ -250,7 +250,7 @@ function endCharge(e) {
                 ball.cooldown = 15;
                 ball.vx = dirX * speed;
                 ball.vy = dirY * speed;
-                if(isLob) ball.vz = speed * 0.6; // Lob manuel PC
+                if(isLob) ball.vz = speed * 0.35; // Lob manuel réduit
             } else {
                 // PASSE Douce
                 let bestMate = null;
@@ -266,9 +266,10 @@ function endCharge(e) {
                     let px = bestMate.x - controlledPlayer.x;
                     let py = bestMate.y - controlledPlayer.y;
                     let pd = Math.hypot(px, py);
-                    ball.vx = (px/pd) * 8;
-                    ball.vy = (py/pd) * 8;
-                    if(isLob) ball.vz = 8;
+                    let passSpeed = isLob ? 6 : 8; // Passe lobée plus lente et flottante
+                    ball.vx = (px/pd) * passSpeed;
+                    ball.vy = (py/pd) * passSpeed;
+                    if(isLob) ball.vz = 5; 
                     controlledPlayer = bestMate; 
                 }
             }
@@ -514,13 +515,51 @@ function gameLoop() {
         }
     }
     
-    // Si l'ennemi porte la balle, il décide de la dégager vers le bas
+    // Si l'ennemi porte la balle, logique de Passe/Tir
     if(ball.owner && enemyTeam.includes(ball.owner)) {
-        if(Math.random() < 0.05) { // Un peu de hasard
-            ball.owner = null;
-            ball.vx = (Math.random()-0.5)*10;
-            ball.vy = 15; // Dégagement vers l'arrière
+        let e = ball.owner;
+        let distToGoal = Math.hypot(WORLD_W/2 - e.x, WORLD_H - e.y);
+        
+        e.possessionTime = (e.possessionTime || 0) + 1;
+
+        if(e.possessionTime > 20) {
+            if(distToGoal < 400 && Math.random() < 0.1) {
+                // Tir au but !
+                let aimX = WORLD_W/2 + (Math.random() - 0.5) * GOAL_WIDTH * 0.8;
+                let dx = aimX - e.x;
+                let dy = WORLD_H - e.y;
+                let mag = Math.hypot(dx, dy);
+                ball.owner = null;
+                ball.cooldown = 15;
+                ball.vx = (dx/mag) * 22; // Frappe forte
+                ball.vy = (dy/mag) * 22;
+                ball.vz = Math.random() * 6; // Tir parfois flottant
+                e.possessionTime = 0;
+            } else if (Math.random() < 0.05) {
+                // Tenter une passe à un coéquipier plus proche du but
+                let bestMate = null;
+                for(let mate of enemyTeam) {
+                    if(mate === e) continue;
+                    if(mate.y > e.y + 100) { // Un coéquipier plus en avant
+                        bestMate = mate;
+                        break;
+                    }
+                }
+                if(bestMate) {
+                    let dx = bestMate.x - e.x;
+                    let dy = bestMate.y - e.y;
+                    let mag = Math.hypot(dx, dy);
+                    ball.owner = null;
+                    ball.cooldown = 15;
+                    ball.vx = (dx/mag) * 12;
+                    ball.vy = (dy/mag) * 12;
+                    e.possessionTime = 0;
+                }
+            }
         }
+    } else {
+        // Reset timer pour les ennemis
+        for(let e of enemyTeam) e.possessionTime = 0;
     }
 
     // IA Gardien Ennemi avec Prédiction de Tir et Délai
