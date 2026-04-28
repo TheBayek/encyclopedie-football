@@ -361,9 +361,15 @@ function drawPitch() {
 function gameLoop() {
     if(!isPlaying) return;
     
-    // Decrement immunities
-    for(let p of myTeam) if(p.tackleImmunity > 0) p.tackleImmunity--;
-    for(let e of enemyTeam) if(e.tackleImmunity > 0) e.tackleImmunity--;
+    // Decrement immunities & stuns
+    for(let p of myTeam) {
+        if(p.tackleImmunity > 0) p.tackleImmunity--;
+        if(p.stunned > 0) p.stunned--;
+    }
+    for(let e of enemyTeam) {
+        if(e.tackleImmunity > 0) e.tackleImmunity--;
+        // enemy stunned is decremented in their AI loop
+    }
 
     // Remplir le fond hors monde
     ctx.fillStyle = "#111";
