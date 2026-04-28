@@ -19,7 +19,7 @@ let camX = 0, camY = 0;
 const GOAL_WIDTH = 150;
 
 // Entités
-let ball = { x: 0, y: 0, vx: 0, vy: 0, owner: null, cooldown: 0 };
+let ball = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, owner: null, cooldown: 0 };
 let myTeam = [];
 let enemyTeam = [];
 let controlledPlayer = null;
@@ -132,7 +132,9 @@ let isCharging = false;
 let chargeStartTime = 0;
 let isDragging = false;
 let dragCurrentX = 0, dragCurrentY = 0;
+let isLob = false;
 
+canvas.addEventListener("contextmenu", e => e.preventDefault());
 canvas.addEventListener("mousedown", startCharge);
 canvas.addEventListener("touchstart", (e) => { e.preventDefault(); startCharge(e.touches[0] || e); }, {passive: false});
 
@@ -170,6 +172,7 @@ function startCharge(e) {
     }
 
     // Sinon, on démarre la visée (Drag pour Mobile, Charge pour PC)
+    isLob = (e.button === 2); // Détection clic droit
     if (e.type.startsWith('touch')) {
         isDragging = true;
         dragCurrentX = cx;
@@ -218,12 +221,14 @@ function endCharge(e) {
                 ball.cooldown = 15;
                 ball.vx = dirX * speed;
                 ball.vy = dirY * speed;
+                ball.vz = speed * 0.4; // Lob auto au drag
             } else if(dist > 10) {
                 // Passe douce
                 ball.owner = null;
                 ball.cooldown = 15;
                 ball.vx = dirX * 8;
                 ball.vy = dirY * 8;
+                ball.vz = 3; // Petite cloche
             }
         }
     } else if (isCharging && !isTouch) {
@@ -245,6 +250,7 @@ function endCharge(e) {
                 ball.cooldown = 15;
                 ball.vx = dirX * speed;
                 ball.vy = dirY * speed;
+                if(isLob) ball.vz = speed * 0.6; // Lob manuel PC
             } else {
                 // PASSE Douce
                 let bestMate = null;
@@ -262,6 +268,7 @@ function endCharge(e) {
                     let pd = Math.hypot(px, py);
                     ball.vx = (px/pd) * 8;
                     ball.vy = (py/pd) * 8;
+                    if(isLob) ball.vz = 8;
                     controlledPlayer = bestMate; 
                 }
             }
@@ -303,7 +310,7 @@ function launchGame(level) {
     enemyGoalie = { x: WORLD_W/2, y: 50, color: "yellow", speed: goalieSpeed };
     myGoalie = { x: WORLD_W/2, y: WORLD_H - 50, color: "lightgreen", speed: 4 };
 
-    ball.x = WORLD_W/2; ball.y = WORLD_H/2 + 200; ball.vx = 0; ball.vy = 0; ball.owner = null;
+    ball.x = WORLD_W/2; ball.y = WORLD_H/2 + 200; ball.z = 0; ball.vx = 0; ball.vy = 0; ball.vz = 0; ball.owner = null;
 
     if(gameLoopId) cancelAnimationFrame(gameLoopId);
     gameLoop();
@@ -422,6 +429,7 @@ function gameLoop() {
     if(controlledPlayer) {
         controlledPlayer.x += dx * controlledPlayer.speed;
         controlledPlayer.y += dy * controlledPlayer.speed;
+        if(dx !== 0 || dy !== 0) controlledPlayer.animPhase = (controlledPlayer.animPhase || 0) + 0.3;
 
         // Frontières
         controlledPlayer.x = Math.max(15, Math.min(WORLD_W-15, controlledPlayer.x));
@@ -443,6 +451,7 @@ function gameLoop() {
         if(dAI > 5) {
             p.x += (dxAI/dAI) * (p.speed * 0.5);
             p.y += (dyAI/dAI) * (p.speed * 0.5);
+            p.animPhase = (p.animPhase || 0) + 0.2;
         }
         p.x = Math.max(15, Math.min(WORLD_W-15, p.x));
         p.y = Math.max(15, Math.min(WORLD_H-15, p.y));
@@ -489,6 +498,7 @@ function gameLoop() {
         if(dist > 5) {
             e.x += (ex/dist) * e.speed;
             e.y += (ey/dist) * e.speed;
+            e.animPhase = (e.animPhase || 0) + 0.2;
         }
 
         // Si l'ennemi touche le porteur du ballon (Nous) -> Vol de balle (ou Perdu direct)
@@ -513,41 +523,77 @@ function gameLoop() {
         }
     }
 
-    // IA Gardien Ennemi avec Prédiction de Tir
-    let targetGX = ball.x;
+    // IA Gardien Ennemi avec Prédiction de Tir et Délai
+    let targetGX = enemyGoalie.x;
     if(ball.vy < -1) {
         let timeToGoal = (enemyGoalie.y - ball.y) / ball.vy;
         if(timeToGoal > 0 && timeToGoal < 100) targetGX = ball.x + ball.vx * timeToGoal;
+    } else {
+        targetGX = ball.x; // Suit la balle lentement
     }
     // Rester dans les cages
     targetGX = Math.max(WORLD_W/2 - GOAL_WIDTH/2 + 15, Math.min(WORLD_W/2 + GOAL_WIDTH/2 - 15, targetGX));
 
-    if(Math.abs(targetGX - enemyGoalie.x) > 5) {
-        enemyGoalie.x += Math.sign(targetGX - enemyGoalie.x) * enemyGoalie.speed;
+    let dxG = targetGX - enemyGoalie.x;
+    if(Math.abs(dxG) > 5) {
+        enemyGoalie.x += Math.sign(dxG) * (enemyGoalie.speed * 0.8); // Vitesse limitée pour équilibrage
     }
-    // Collisions gardien ennemi (arrêts)
-    if(!enemyTeam.includes(ball.owner) && Math.hypot(ball.x - enemyGoalie.x, ball.y - enemyGoalie.y) < 30) {
-        ball.vx *= -1; ball.vy *= -1; ball.owner = null;
+    
+    // Hitbox 3D Gardien Ennemi
+    if(!enemyTeam.includes(ball.owner)) {
+        let distG = Math.hypot(ball.x - enemyGoalie.x, ball.y - enemyGoalie.y);
+        if(distG < 35) {
+            let blocked = true;
+            if(ball.z > 40) blocked = false; // Lob par-dessus
+            if(ball.z < 15 && Math.abs(ball.x - enemyGoalie.x) < 12) blocked = false; // Petit pont
+            
+            if(blocked) {
+                ball.vx *= -0.5; ball.vy *= -0.5; ball.owner = null;
+            }
+        }
     }
 
     // IA Gardien Allié
-    if(Math.abs(ball.x - myGoalie.x) > 5) {
-        myGoalie.x += Math.sign(ball.x - myGoalie.x) * myGoalie.speed;
+    let targetMyG = ball.x;
+    if(Math.abs(targetMyG - myGoalie.x) > 5) {
+        myGoalie.x += Math.sign(targetMyG - myGoalie.x) * myGoalie.speed;
     }
-    // Collisions gardien allié (arrêts inverses)
-    if(!myTeam.includes(ball.owner) && Math.hypot(ball.x - myGoalie.x, ball.y - myGoalie.y) < 30) {
-        ball.vx *= -1; ball.vy *= -1; ball.owner = null;
+    // Hitbox 3D Gardien Allié
+    if(!myTeam.includes(ball.owner)) {
+        let distG = Math.hypot(ball.x - myGoalie.x, ball.y - myGoalie.y);
+        if(distG < 35) {
+            let blocked = true;
+            if(ball.z > 40) blocked = false; // Lob
+            if(ball.z < 15 && Math.abs(ball.x - myGoalie.x) < 12) blocked = false; // Petit pont
+            
+            if(blocked) {
+                ball.vx *= -0.5; ball.vy *= -0.5; ball.owner = null;
+            }
+        }
     }
 
-    // Mouvement Balle
+    // Mouvement Balle (3D)
     if(ball.cooldown > 0) ball.cooldown--;
     
     if(ball.owner) {
         ball.x = ball.owner.x;
-        ball.y = ball.owner.y; // Balle au centre du joueur
+        ball.y = ball.owner.y; 
+        ball.z = 5; // Hauteur du genou/pied
+        ball.vx = 0; ball.vy = 0; ball.vz = 0;
     } else {
         ball.x += ball.vx;
         ball.y += ball.vy;
+        ball.z += ball.vz;
+        
+        // Gravité
+        ball.vz -= 0.6;
+        if (ball.z <= 0) {
+            ball.z = 0;
+            // Rebond au sol
+            ball.vz *= -0.6;
+            if (Math.abs(ball.vz) < 1.5) ball.vz = 0;
+        }
+
         ball.vx *= 0.96; // Friction herbe
         ball.vy *= 0.96;
 
@@ -605,34 +651,34 @@ function gameLoop() {
         return;
     }
 
-    // Dessin Joueurs
-    ctx.font = "25px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
+    // Dessin Joueurs Animés
     for(let p of myTeam) {
-        ctx.fillStyle = p === controlledPlayer ? "cyan" : "rgba(0,0,255,0.7)";
-        ctx.beginPath(); ctx.arc(p.x, p.y, 15, 0, Math.PI*2); ctx.fill();
+        drawPlayer(ctx, p, p === controlledPlayer ? "cyan" : "blue", false);
         // Halo de possession/contrôle
         if(p === controlledPlayer) {
-            ctx.strokeStyle = "white"; ctx.lineWidth = 2;
-            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(p.x, p.y + 15, 20, 10, 0, 0, Math.PI*2);
+            ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
         }
     }
 
     for(let e of enemyTeam) {
-        ctx.fillStyle = "red";
-        ctx.beginPath(); ctx.arc(e.x, e.y, 15, 0, Math.PI*2); ctx.fill();
+        drawPlayer(ctx, e, "red", false);
     }
 
     // Gardiens
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(enemyGoalie.x - 15, enemyGoalie.y - 15, 30, 30);
-    ctx.fillStyle = "lightgreen";
-    ctx.fillRect(myGoalie.x - 15, myGoalie.y - 15, 30, 30);
+    drawPlayer(ctx, enemyGoalie, "yellow", true);
+    drawPlayer(ctx, myGoalie, "lightgreen", true);
 
-    // Dessin Balle
-    ctx.fillText("⚽", ball.x, ball.y);
+    // Dessin Balle avec hauteur (Z)
+    // Ombre
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.beginPath(); ctx.ellipse(ball.x, ball.y, 8, 4, 0, 0, Math.PI*2); ctx.fill();
+    // Balle
+    ctx.font = "20px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("⚽", ball.x, ball.y - ball.z);
 
     // Dessin de la flèche de visée (Drag Mobile)
     if(isDragging && controlledPlayer && ball.owner === controlledPlayer) {
@@ -669,3 +715,62 @@ function gameLoop() {
 
 // Lancement au chargement
 initMenu();
+
+// Fonction de dessin procédural d'un joueur/gardien
+function drawPlayer(ctx, p, color, isGoalie = false) {
+    let anim = p.animPhase || 0;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    
+    // Ombre sous le joueur
+    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.beginPath(); ctx.ellipse(0, 15, 12, 6, 0, 0, Math.PI*2); ctx.fill();
+    
+    // Tête
+    ctx.fillStyle = "#ffcc99"; // Peau
+    ctx.beginPath(); ctx.arc(0, -20, 8, 0, Math.PI*2); ctx.fill();
+    
+    // Torse
+    ctx.fillStyle = color;
+    let width = isGoalie ? 22 : 16;
+    ctx.fillRect(-width/2, -15, width, 20);
+    
+    // Bras (Balancier)
+    ctx.strokeStyle = "#ffcc99";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    
+    let armSwing = isGoalie ? 0 : Math.sin(anim) * 10;
+    
+    // Bras gauche
+    ctx.beginPath(); ctx.moveTo(-width/2 - 2, -10); 
+    if(isGoalie) ctx.lineTo(-width/2 - 15, -5); // Bras écartés (gardien)
+    else ctx.lineTo(-width/2 - 2, 5 + armSwing);
+    ctx.stroke();
+    
+    // Bras droit
+    ctx.beginPath(); ctx.moveTo(width/2 + 2, -10); 
+    if(isGoalie) ctx.lineTo(width/2 + 15, -5);
+    else ctx.lineTo(width/2 + 2, 5 - armSwing);
+    ctx.stroke();
+    
+    // Jambes
+    ctx.strokeStyle = isGoalie ? "black" : "white"; // Short
+    ctx.lineWidth = 6;
+    let legSwing = isGoalie ? 0 : Math.sin(anim) * 12;
+    
+    // Jambe gauche
+    ctx.beginPath(); ctx.moveTo(-5, 5);
+    if(isGoalie) ctx.lineTo(-12, 20); // Jambes écartées
+    else ctx.lineTo(-5, 20 - legSwing);
+    ctx.stroke();
+    
+    // Jambe droite
+    ctx.beginPath(); ctx.moveTo(5, 5);
+    if(isGoalie) ctx.lineTo(12, 20);
+    else ctx.lineTo(5, 20 + legSwing);
+    ctx.stroke();
+    
+    // Retour du contexte
+    ctx.restore();
+}
