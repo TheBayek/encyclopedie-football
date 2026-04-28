@@ -127,7 +127,9 @@ function updateJoystick(touch) {
 window.addEventListener("keydown", e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
 window.addEventListener("keyup", e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
 
-// Tirs et Passes (Système de Drag)
+// Tirs et Passes (Système Hybride)
+let isCharging = false;
+let chargeStartTime = 0;
 let isDragging = false;
 let dragCurrentX = 0, dragCurrentY = 0;
 
@@ -167,10 +169,15 @@ function startCharge(e) {
         return;
     }
 
-    // Sinon, on démarre la visée
-    isDragging = true;
-    dragCurrentX = cx;
-    dragCurrentY = cy;
+    // Sinon, on démarre la visée (Drag pour Mobile, Charge pour PC)
+    if (e.type.startsWith('touch')) {
+        isDragging = true;
+        dragCurrentX = cx;
+        dragCurrentY = cy;
+    } else {
+        isCharging = true;
+        chargeStartTime = Date.now();
+    }
 }
 
 canvas.addEventListener("mousemove", updateDrag);
@@ -187,30 +194,77 @@ canvas.addEventListener("mouseup", endCharge);
 canvas.addEventListener("touchend", (e) => { e.preventDefault(); endCharge(e.changedTouches[0] || e); }, {passive: false});
 
 function endCharge(e) {
-    if(!isPlaying || !controlledPlayer || !isDragging) return;
-    isDragging = false;
+    if(!isPlaying || !controlledPlayer) return;
+    let isTouch = e.type.startsWith('touch');
 
-    if(ball.owner === controlledPlayer) {
-        let dx = dragCurrentX - controlledPlayer.x;
-        let dy = dragCurrentY - controlledPlayer.y;
-        let dist = Math.hypot(dx, dy);
-        let dirX = dist > 0 ? dx/dist : 0; 
-        let dirY = dist > 0 ? dy/dist : -1;
+    let rect = canvas.getBoundingClientRect();
+    let cx = (e.clientX || e.clientX===0 ? e.clientX : (e.changedTouches ? e.changedTouches[0].clientX : 0)) - rect.left + camX;
+    let cy = (e.clientY || e.clientY===0 ? e.clientY : (e.changedTouches ? e.changedTouches[0].clientY : 0)) - rect.top + camY;
 
-        if(dist > 50) {
-            // Frappe (plus la distance est grande, plus le tir est fort)
-            let power = Math.min(1, dist / 300); // 300px max
-            let speed = 10 + power * 18; // Max 28
-            ball.owner = null;
-            ball.cooldown = 15;
-            ball.vx = dirX * speed;
-            ball.vy = dirY * speed;
-        } else if(dist > 10) {
-            // Passe douce
-            ball.owner = null;
-            ball.cooldown = 15;
-            ball.vx = dirX * 8;
-            ball.vy = dirY * 8;
+    if (isDragging && isTouch) {
+        isDragging = false;
+        if(ball.owner === controlledPlayer) {
+            let dx = dragCurrentX - controlledPlayer.x;
+            let dy = dragCurrentY - controlledPlayer.y;
+            let dist = Math.hypot(dx, dy);
+            let dirX = dist > 0 ? dx/dist : 0; 
+            let dirY = dist > 0 ? dy/dist : -1;
+
+            if(dist > 50) {
+                // Frappe
+                let power = Math.min(1, dist / 300); // 300px max
+                let speed = 10 + power * 18; // Max 28
+                ball.owner = null;
+                ball.cooldown = 15;
+                ball.vx = dirX * speed;
+                ball.vy = dirY * speed;
+            } else if(dist > 10) {
+                // Passe douce
+                ball.owner = null;
+                ball.cooldown = 15;
+                ball.vx = dirX * 8;
+                ball.vy = dirY * 8;
+            }
+        }
+    } else if (isCharging && !isTouch) {
+        isCharging = false;
+        if(ball.owner === controlledPlayer) {
+            let duration = Date.now() - chargeStartTime;
+            let dx = cx - controlledPlayer.x;
+            let dy = cy - controlledPlayer.y;
+            let dist = Math.hypot(dx, dy);
+            let dirX = dist > 0 ? dx/dist : 0; 
+            let dirY = dist > 0 ? dy/dist : -1;
+
+            if(duration > 400) {
+                // FRAPPE Puissante
+                let speed = 8 + (duration / 5000) * 20; 
+                if(speed > 28) speed = 28;
+                
+                ball.owner = null;
+                ball.cooldown = 15;
+                ball.vx = dirX * speed;
+                ball.vy = dirY * speed;
+            } else {
+                // PASSE Douce
+                let bestMate = null;
+                let minDist = 9999;
+                for(let p of myTeam) {
+                    if(p === controlledPlayer) continue;
+                    let d = Math.hypot(p.x - cx, p.y - cy);
+                    if(d < minDist) { minDist = d; bestMate = p; }
+                }
+                if(bestMate) {
+                    ball.owner = null;
+                    ball.cooldown = 15;
+                    let px = bestMate.x - controlledPlayer.x;
+                    let py = bestMate.y - controlledPlayer.y;
+                    let pd = Math.hypot(px, py);
+                    ball.vx = (px/pd) * 8;
+                    ball.vy = (py/pd) * 8;
+                    controlledPlayer = bestMate; 
+                }
+            }
         }
     }
 }
@@ -574,7 +628,7 @@ function gameLoop() {
     // Dessin Balle
     ctx.fillText("⚽", ball.x, ball.y);
 
-    // Dessin de la flèche de visée (Drag)
+    // Dessin de la flèche de visée (Drag Mobile)
     if(isDragging && controlledPlayer && ball.owner === controlledPlayer) {
         let dx = dragCurrentX - controlledPlayer.x;
         let dy = dragCurrentY - controlledPlayer.y;
@@ -590,6 +644,16 @@ function gameLoop() {
         ctx.setLineDash([10, 10]);
         ctx.stroke();
         ctx.setLineDash([]);
+    }
+
+    // Dessin de la jauge de charge (PC)
+    if(isCharging && controlledPlayer && ball.owner === controlledPlayer) {
+        let duration = Date.now() - chargeStartTime;
+        let powerRatio = Math.min(1, duration / 5000); // Max 5s
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(controlledPlayer.x - 20, controlledPlayer.y - 30, 40, 6);
+        ctx.fillStyle = powerRatio < 0.3 ? "cyan" : (powerRatio < 0.7 ? "yellow" : "red");
+        ctx.fillRect(controlledPlayer.x - 20, controlledPlayer.y - 30, 40 * powerRatio, 6);
     }
     
     ctx.restore();
