@@ -127,10 +127,9 @@ function updateJoystick(touch) {
 window.addEventListener("keydown", e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = true; });
 window.addEventListener("keyup", e => { if(keys.hasOwnProperty(e.key)) keys[e.key] = false; });
 
-// Tirs et Passes (Système de Charge)
-let chargeStartTime = 0;
-let isCharging = false;
-let chargeX = 0, chargeY = 0;
+// Tirs et Passes (Système de Drag)
+let isDragging = false;
+let dragCurrentX = 0, dragCurrentY = 0;
 
 canvas.addEventListener("mousedown", startCharge);
 canvas.addEventListener("touchstart", (e) => { e.preventDefault(); startCharge(e.touches[0] || e); }, {passive: false});
@@ -138,11 +137,12 @@ canvas.addEventListener("touchstart", (e) => { e.preventDefault(); startCharge(e
 function startCharge(e) {
     if(!isPlaying || !controlledPlayer) return;
     
-    // Tacle direct (sans charge) si pas la balle
+    let rect = canvas.getBoundingClientRect();
+    let cx = (e.clientX || e.clientX===0 ? e.clientX : e.touches[0].clientX) - rect.left + camX;
+    let cy = (e.clientY || e.clientY===0 ? e.clientY : e.touches[0].clientY) - rect.top + camY;
+    
+    // Tacle direct si pas la balle
     if(ball.owner !== controlledPlayer) {
-        let rect = canvas.getBoundingClientRect();
-        let cx = e.clientX - rect.left + camX;
-        let cy = e.clientY - rect.top + camY;
         
         // Tacle manuel
         let clickedEnemy = null;
@@ -167,93 +167,55 @@ function startCharge(e) {
         return;
     }
 
-    // Sinon, on démarre la charge pour une passe/tir
-    chargeStartTime = Date.now();
-    isCharging = true;
+    // Sinon, on démarre la visée
+    isDragging = true;
+    dragCurrentX = cx;
+    dragCurrentY = cy;
+}
+
+canvas.addEventListener("mousemove", updateDrag);
+canvas.addEventListener("touchmove", (e) => { e.preventDefault(); updateDrag(e.touches[0] || e); }, {passive: false});
+
+function updateDrag(e) {
+    if(!isDragging) return;
+    let rect = canvas.getBoundingClientRect();
+    dragCurrentX = (e.clientX || e.clientX===0 ? e.clientX : e.changedTouches?.[0].clientX) - rect.left + camX;
+    dragCurrentY = (e.clientY || e.clientY===0 ? e.clientY : e.changedTouches?.[0].clientY) - rect.top + camY;
 }
 
 canvas.addEventListener("mouseup", endCharge);
 canvas.addEventListener("touchend", (e) => { e.preventDefault(); endCharge(e.changedTouches[0] || e); }, {passive: false});
 
 function endCharge(e) {
-    if(!isPlaying || !controlledPlayer || !isCharging) return;
-    isCharging = false;
-
-    let rect = canvas.getBoundingClientRect();
-    let cx = e.clientX - rect.left + camX;
-    let cy = e.clientY - rect.top + camY;
+    if(!isPlaying || !controlledPlayer || !isDragging) return;
+    isDragging = false;
 
     if(ball.owner === controlledPlayer) {
-        let duration = Date.now() - chargeStartTime;
-        let dx = cx - controlledPlayer.x;
-        let dy = cy - controlledPlayer.y;
+        let dx = dragCurrentX - controlledPlayer.x;
+        let dy = dragCurrentY - controlledPlayer.y;
         let dist = Math.hypot(dx, dy);
         let dirX = dist > 0 ? dx/dist : 0; 
         let dirY = dist > 0 ? dy/dist : -1;
 
-        if(duration > 400) {
-            // FRAPPE Puissante (Charge)
-            // ex: 5 secondes (5000ms) = Vitesse 25
-            let speed = 8 + (duration / 5000) * 20; 
-            if(speed > 28) speed = 28; // Max limit
-            
+        if(dist > 50) {
+            // Frappe (plus la distance est grande, plus le tir est fort)
+            let power = Math.min(1, dist / 300); // 300px max
+            let speed = 10 + power * 18; // Max 28
             ball.owner = null;
-            ball.cooldown = 15; // Empecher reprise immédiate
+            ball.cooldown = 15;
             ball.vx = dirX * speed;
             ball.vy = dirY * speed;
-        } else {
-            // PASSE Douce (Clic rapide)
-            let bestMate = null;
-            let minDist = 9999;
-            for(let p of myTeam) {
-                if(p === controlledPlayer) continue;
-                let d = Math.hypot(p.x - cx, p.y - cy);
-                if(d < minDist) { minDist = d; bestMate = p; }
-            }
-            if(bestMate) {
-                ball.owner = null;
-                ball.cooldown = 15;
-                let px = bestMate.x - controlledPlayer.x;
-                let py = bestMate.y - controlledPlayer.y;
-                let pd = Math.hypot(px, py);
-                ball.vx = (px/pd) * 8;
-                ball.vy = (py/pd) * 8;
-                controlledPlayer = bestMate; 
-            }
+        } else if(dist > 10) {
+            // Passe douce
+            ball.owner = null;
+            ball.cooldown = 15;
+            ball.vx = dirX * 8;
+            ball.vy = dirY * 8;
         }
     }
 }
 
-// Pour les boutons mobiles
-document.getElementById("btnShoot").addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    if(ball.owner === controlledPlayer) {
-        ball.owner = null;
-        ball.cooldown = 15;
-        // Frappe vers le haut (but ennemi)
-        ball.vx = 0; ball.vy = -15;
-    }
-});
-document.getElementById("btnPass").addEventListener("touchstart", (e) => {
-    e.preventDefault();
-    if(ball.owner === controlledPlayer) {
-        let bestMate = null; let minDist = 9999;
-        for(let p of myTeam) {
-            if(p === controlledPlayer) continue;
-            let d = Math.hypot(p.x - controlledPlayer.x, p.y - controlledPlayer.y);
-            if(d < minDist && p.y < controlledPlayer.y) { minDist = d; bestMate = p; } // Passe en avant
-        }
-        if(bestMate) {
-            ball.owner = null;
-            ball.cooldown = 15;
-            let px = bestMate.x - controlledPlayer.x;
-            let py = bestMate.y - controlledPlayer.y;
-            let pd = Math.hypot(px, py);
-            ball.vx = (px/pd) * 10; ball.vy = (py/pd) * 10;
-            controlledPlayer = bestMate; 
-        }
-    }
-});
+
 
 
 // Moteur Physique
@@ -457,7 +419,7 @@ function gameLoop() {
             }
         } else {
             // Les autres se placent en retrait (ligne défensive)
-            tx = CW/2 + (i - enemyTeam.length/2)*80;
+            tx = WORLD_W/2 + (i - enemyTeam.length/2)*80;
             ty = ball.y - 150; // couvrent la profondeur
             if(ty < 150) ty = 150;
         }
@@ -491,9 +453,17 @@ function gameLoop() {
         }
     }
 
-    // IA Gardien Ennemi
-    if(Math.abs(ball.x - enemyGoalie.x) > 5) {
-        enemyGoalie.x += Math.sign(ball.x - enemyGoalie.x) * enemyGoalie.speed;
+    // IA Gardien Ennemi avec Prédiction de Tir
+    let targetGX = ball.x;
+    if(ball.vy < -1) {
+        let timeToGoal = (enemyGoalie.y - ball.y) / ball.vy;
+        if(timeToGoal > 0 && timeToGoal < 100) targetGX = ball.x + ball.vx * timeToGoal;
+    }
+    // Rester dans les cages
+    targetGX = Math.max(WORLD_W/2 - GOAL_WIDTH/2 + 15, Math.min(WORLD_W/2 + GOAL_WIDTH/2 - 15, targetGX));
+
+    if(Math.abs(targetGX - enemyGoalie.x) > 5) {
+        enemyGoalie.x += Math.sign(targetGX - enemyGoalie.x) * enemyGoalie.speed;
     }
     // Collisions gardien ennemi (arrêts)
     if(!enemyTeam.includes(ball.owner) && Math.hypot(ball.x - enemyGoalie.x, ball.y - enemyGoalie.y) < 30) {
@@ -604,14 +574,22 @@ function gameLoop() {
     // Dessin Balle
     ctx.fillText("⚽", ball.x, ball.y);
 
-    // Dessin de la jauge de charge (si on charge)
-    if(isCharging && controlledPlayer) {
-        let duration = Date.now() - chargeStartTime;
-        let powerRatio = Math.min(1, duration / 5000); // Max 5s
-        ctx.fillStyle = "rgba(0,0,0,0.5)";
-        ctx.fillRect(controlledPlayer.x - 20, controlledPlayer.y - 30, 40, 6);
-        ctx.fillStyle = powerRatio < 0.3 ? "cyan" : (powerRatio < 0.7 ? "yellow" : "red");
-        ctx.fillRect(controlledPlayer.x - 20, controlledPlayer.y - 30, 40 * powerRatio, 6);
+    // Dessin de la flèche de visée (Drag)
+    if(isDragging && controlledPlayer && ball.owner === controlledPlayer) {
+        let dx = dragCurrentX - controlledPlayer.x;
+        let dy = dragCurrentY - controlledPlayer.y;
+        let dist = Math.hypot(dx, dy);
+        let maxDist = Math.min(300, dist);
+        
+        ctx.beginPath();
+        ctx.moveTo(controlledPlayer.x, controlledPlayer.y);
+        ctx.lineTo(controlledPlayer.x + (dist > 0 ? dx/dist : 0) * maxDist, controlledPlayer.y + (dist > 0 ? dy/dist : -1) * maxDist);
+        let powerRatio = maxDist / 300;
+        ctx.strokeStyle = `rgba(255, ${255 - powerRatio*255}, 0, 0.8)`; // Jaune -> Rouge
+        ctx.lineWidth = 5;
+        ctx.setLineDash([10, 10]);
+        ctx.stroke();
+        ctx.setLineDash([]);
     }
     
     ctx.restore();
