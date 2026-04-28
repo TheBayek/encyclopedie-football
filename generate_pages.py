@@ -71,7 +71,7 @@ lorem_paragraphs = [
     "Qu'importe les origines sociales ou contraintes de l'environnement, un simple parc devient subitement un <strong>terrain d'accueil permanent</strong> où l'éducation civique s'élabore tacitement à côté des lois mêmes du fair-play."
 ]
 
-lorem_html = "".join([f"<p style='margin-bottom: 1.5rem; line-height: 1.8;'>{p}</p>" if not p.startswith("<blockquote") else p for p in lorem_paragraphs]) * 2
+lorem_html = "".join([f"<p style='margin-bottom: 1.5rem; line-height: 1.8;'>{p}</p>" if not p.startswith("<blockquote") else p for p in lorem_paragraphs])
 
 import math
 
@@ -103,9 +103,13 @@ for cat, data in categories.items():
         content_paragraphs.append(img_tag)
         
         # Adding actual factual verified content regarding that specific section
-        fact1 = f"<p><strong>Point Historique n°1 :</strong> {sections_array[(i*3)%len(sections_array)]}</p>"
-        fact2 = f"<p><strong>Point Historique n°2 :</strong> {sections_array[(i*7+1)%len(sections_array)]}</p>"
-        fact3 = f"<p><strong>Observation Complémentaire :</strong> {sections_array[(i*11+2)%len(sections_array)]}</p>"
+        idx1 = i % len(sections_array)
+        idx2 = (i + 1) % len(sections_array)
+        idx3 = (i + 2) % len(sections_array)
+
+        fact1 = f"<p><strong>Point Historique n°1 :</strong> {sections_array[idx1]}</p>"
+        fact2 = f"<p><strong>Impact Stratégique :</strong> {sections_array[idx2]}</p>"
+        fact3 = f"<p><strong>Héritage Moderne :</strong> {sections_array[idx3]}</p>"
         
         content_paragraphs.extend([fact1, fact2, fact3])
         
