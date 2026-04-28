@@ -19,7 +19,7 @@ let camX = 0, camY = 0;
 const GOAL_WIDTH = 150;
 
 // Entités
-let ball = { x: 0, y: 0, vx: 0, vy: 0, owner: null };
+let ball = { x: 0, y: 0, vx: 0, vy: 0, owner: null, cooldown: 0 };
 let myTeam = [];
 let enemyTeam = [];
 let controlledPlayer = null;
@@ -187,7 +187,8 @@ function endCharge(e) {
         let dx = cx - controlledPlayer.x;
         let dy = cy - controlledPlayer.y;
         let dist = Math.hypot(dx, dy);
-        let dirX = dx/dist; let dirY = dy/dist;
+        let dirX = dist > 0 ? dx/dist : 0; 
+        let dirY = dist > 0 ? dy/dist : -1;
 
         if(duration > 400) {
             // FRAPPE Puissante (Charge)
@@ -196,6 +197,7 @@ function endCharge(e) {
             if(speed > 28) speed = 28; // Max limit
             
             ball.owner = null;
+            ball.cooldown = 15; // Empecher reprise immédiate
             ball.vx = dirX * speed;
             ball.vy = dirY * speed;
         } else {
@@ -209,6 +211,7 @@ function endCharge(e) {
             }
             if(bestMate) {
                 ball.owner = null;
+                ball.cooldown = 15;
                 let px = bestMate.x - controlledPlayer.x;
                 let py = bestMate.y - controlledPlayer.y;
                 let pd = Math.hypot(px, py);
@@ -225,6 +228,7 @@ document.getElementById("btnShoot").addEventListener("touchstart", (e) => {
     e.preventDefault();
     if(ball.owner === controlledPlayer) {
         ball.owner = null;
+        ball.cooldown = 15;
         // Frappe vers le haut (but ennemi)
         ball.vx = 0; ball.vy = -15;
     }
@@ -240,6 +244,7 @@ document.getElementById("btnPass").addEventListener("touchstart", (e) => {
         }
         if(bestMate) {
             ball.owner = null;
+            ball.cooldown = 15;
             let px = bestMate.x - controlledPlayer.x;
             let py = bestMate.y - controlledPlayer.y;
             let pd = Math.hypot(px, py);
@@ -496,6 +501,8 @@ function gameLoop() {
     }
 
     // Mouvement Balle
+    if(ball.cooldown > 0) ball.cooldown--;
+    
     if(ball.owner) {
         ball.x = ball.owner.x;
         ball.y = ball.owner.y; // Balle au centre du joueur
@@ -515,11 +522,11 @@ function gameLoop() {
         // Ramassage Balle
         let claimed = false;
         // On vérifie le joueur contrôlé d'abord
-        if(controlledPlayer && !(controlledPlayer.stunned > 0) && Math.hypot(controlledPlayer.x - ball.x, controlledPlayer.y - ball.y) < 25) {
+        if(ball.cooldown === 0 && controlledPlayer && !(controlledPlayer.stunned > 0) && Math.hypot(controlledPlayer.x - ball.x, controlledPlayer.y - ball.y) < 25) {
             ball.owner = controlledPlayer;
             claimed = true;
         }
-        if(!claimed) {
+        if(ball.cooldown === 0 && !claimed) {
             for(let p of myTeam) {
                 if(!(p.stunned > 0) && Math.hypot(p.x - ball.x, p.y - ball.y) < 25) {
                     ball.owner = p;
@@ -529,7 +536,7 @@ function gameLoop() {
                 }
             }
         }
-        if(!claimed) {
+        if(ball.cooldown === 0 && !claimed) {
             for(let e of enemyTeam) {
                 if(!(e.stunned > 0) && Math.hypot(e.x - ball.x, e.y - ball.y) < 25) {
                     ball.owner = e;
